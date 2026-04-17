@@ -1,0 +1,249 @@
+@page {
+  size: A4;
+  margin: 16mm 17mm 18mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff;
+    padding: 0;
+  }
+
+  body {
+    font-size: 11.2pt;
+    line-height: 1.62;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .page {
+    width: auto;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  #pdf-export-btn {
+    display: none;
+  }
+
+  h1 {
+    font-size: 20pt;
+    margin-bottom: 18pt;
+  }
+
+  h2 {
+    font-size: 15pt;
+    margin-top: 22pt;
+  }
+
+  h2.chapter-page-break {
+    break-before: page;
+    page-break-before: always;
+    margin-top: 0;
+  }
+
+  h3 {
+    font-size: 12.5pt;
+  }
+
+  .visual-block {
+    margin: 14pt 0 18pt;
+  }
+
+  .visual-row {
+    gap: 10pt;
+    margin: 14pt 0 18pt;
+  }
+
+  /* Export-only baseline compaction to reduce persistent page-end blanks. */
+  html.pdf-export-mode .visual-block {
+    margin-top: 10pt;
+    margin-bottom: 13pt;
+  }
+
+  html.pdf-export-mode .visual-row {
+    gap: 8pt;
+    margin-top: 10pt;
+    margin-bottom: 13pt;
+  }
+
+  html.pdf-export-mode .visual-full.visual-size-medium .chart-container,
+  html.pdf-export-mode .visual-full.visual-size-medium .consulting-figure {
+    padding: 9pt 11pt;
+  }
+
+  html.pdf-export-mode .visual-full.visual-size-medium .chart-container [id^="chart-C"] {
+    height: 188px !important;
+  }
+
+  html.pdf-export-mode .visual-full.visual-size-medium .chart-title,
+  html.pdf-export-mode .visual-full.visual-size-medium .figure-title {
+    font-size: 11.1pt;
+    line-height: 1.34;
+  }
+
+  /* Step 1: allow small text/card grids to paginate between items (not through items). */
+  .visual-block[data-page-role="figure_text"],
+  .visual-row[data-page-role="paired_visual"],
+  .visual-block[data-page-role="table_visual"],
+  .visual-block[data-page-role="kpi_visual"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .visual-block[data-size="compact"],
+  .visual-block[data-layout="compact"] {
+    margin-top: 8pt;
+    margin-bottom: 10pt;
+  }
+
+  .visual-size-small .insight-grid,
+  .visual-size-small .framework-grid,
+  .visual-size-small .scorecard-grid,
+  .visual-size-small .value-chain,
+  .visual-size-small .process-chain,
+  .visual-size-small .risk-matrix,
+  .visual-size-small .heatmap-grid {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .visual-size-small .insight-card,
+  .visual-size-small .framework-card,
+  .visual-size-small .scorecard-item,
+  .visual-size-small .chain-step,
+  .visual-size-small .risk-cell,
+  .visual-size-small .heatmap-cell,
+  .visual-size-small .kpi-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Step 2: adaptive compact-print mode (applied by pdf-export.js before print). */
+  .compact-print.visual-block {
+    margin-top: 10pt !important;
+    margin-bottom: 12pt !important;
+  }
+
+  .compact-print .chart-container,
+  .compact-print .consulting-figure {
+    padding: 10pt 12pt !important;
+  }
+
+  .compact-print .chart-title,
+  .compact-print .figure-title {
+    font-size: 11.2pt !important;
+    line-height: 1.36 !important;
+  }
+
+  .compact-print .chart-annotation,
+  .compact-print .figure-note {
+    font-size: 9.4pt !important;
+    margin-bottom: 5pt !important;
+  }
+
+  .compact-print .chart-src,
+  .compact-print .figure-src,
+  .compact-print .component-src {
+    margin-top: 6pt !important;
+    font-size: 8.8pt !important;
+  }
+
+  .compact-print .kpi-block,
+  .compact-print .kpi-strip {
+    gap: 6pt !important;
+  }
+
+  .compact-print .kpi-card {
+    padding: 6pt 8pt !important;
+  }
+
+  .compact-print .kpi-val {
+    font-size: 18pt !important;
+    line-height: 1.12 !important;
+  }
+
+  /* Page-fit planner: stronger compaction for blocks that can be pulled upward. */
+  .page-fit-compact.visual-block,
+  .page-fit-compact.visual-row {
+    margin-top: 8pt !important;
+    margin-bottom: 10pt !important;
+  }
+
+  .page-fit-compact .chart-container,
+  .page-fit-compact .consulting-figure {
+    padding: 8pt 10pt !important;
+  }
+
+  .page-fit-compact .chart-title,
+  .page-fit-compact .figure-title {
+    font-size: 10.6pt !important;
+    line-height: 1.3 !important;
+  }
+
+  .page-fit-compact .chart-annotation,
+  .page-fit-compact .figure-note {
+    font-size: 8.9pt !important;
+    margin-bottom: 4pt !important;
+  }
+
+  .page-fit-compact .chart-src,
+  .page-fit-compact .figure-src,
+  .page-fit-compact .component-src {
+    margin-top: 4pt !important;
+    font-size: 8.2pt !important;
+  }
+
+  .chart-container,
+  .consulting-figure,
+  .kpi-card,
+  .insight-card,
+  .framework-card,
+  .scorecard-item {
+    box-shadow: none;
+  }
+
+  table {
+    font-size: 9.5pt;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  body {
+    padding: 18px 10px;
+  }
+
+  .page {
+    padding: 28px 20px;
+  }
+
+  .report-meta,
+  .driver-tree,
+  .range-row,
+  .swimlane,
+  .decision-tree,
+  .lollipop-row {
+    grid-template-columns: 1fr;
+  }
+
+  .visual-row,
+  .visual-row-third,
+  .visual-row-quarter,
+  .matrix-2x2,
+  .risk-matrix,
+  .heatmap-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .matrix-cell {
+    border-right: 0;
+  }
+
+  .swimlane-track {
+    grid-template-columns: 1fr;
+  }
+}
