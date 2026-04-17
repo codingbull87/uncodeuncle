@@ -198,6 +198,43 @@
     font-size: 8.2pt !important;
   }
 
+  .visual-block[data-visual-type="decision_tree"][data-layout="compact"] .decision-tree,
+  .page-fit-compact .decision-tree {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6pt !important;
+  }
+
+  .visual-block[data-visual-type="decision_tree"][data-layout="compact"] .decision-node,
+  .page-fit-compact .decision-node {
+    padding: 6pt 7pt !important;
+    border-radius: 5px !important;
+  }
+
+  .visual-block[data-visual-type="decision_tree"][data-layout="compact"] .decision-title,
+  .page-fit-compact .decision-title {
+    font-size: 9.4pt !important;
+    line-height: 1.15 !important;
+    margin-bottom: 2pt !important;
+  }
+
+  .visual-block[data-visual-type="decision_tree"][data-layout="compact"] .decision-body,
+  .page-fit-compact .decision-body {
+    font-size: 8.2pt !important;
+    line-height: 1.18 !important;
+  }
+
+  main > hr:last-of-type {
+    margin: 4pt 0 3pt !important;
+  }
+
+  main > p:last-of-type {
+    font-size: 8pt !important;
+    line-height: 1.22 !important;
+    margin-top: 3pt !important;
+    margin-bottom: 0 !important;
+    color: var(--muted) !important;
+  }
+
   .chart-container,
   .consulting-figure,
   .kpi-card,
@@ -205,20 +242,6 @@
   .framework-card,
   .scorecard-item {
     box-shadow: none;
-  }
-
-  .process-chain,
-  .value-chain {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .risk-matrix,
-  .heatmap-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .decision-tree {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   table {

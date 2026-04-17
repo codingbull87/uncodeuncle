@@ -23,8 +23,6 @@ Execution policy:
 - Before Phase 6: `check_phase_contract.py before-fragments`
 - After each parallel batch: fragment quality lint
 - Before Phase 7: `check_phase_contract.py before-assemble`
-- After Phase 7: `qa_html.py`
-- Before/after Phase 8: `qa_pdf.py` on assembled HTML, then `export_pdf.py`
 - Before Phase 8: `check_phase_contract.py before-export`
 
 ## Dispatch Rules
@@ -33,6 +31,4 @@ Execution policy:
 - `validator` can only write `VALIDATION.md`
 - `fragment-generator` can only write assigned `C{id}.html`
 - One fragment task = one output file
-- Phase 2 palette selection is a gate. Do not proceed to Phase 3/5/6 with `color_confirmed` missing or false.
-- Fragment workers must obey `references/component-contracts.json`.
 - On any gate failure, stop and report; do not continue

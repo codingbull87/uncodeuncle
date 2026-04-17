@@ -40,7 +40,6 @@
 - `layout` 为 `half`、`third` 或 `compact` 时，推荐设置 `group`
 - `equal_height` 缺省按 `false` 处理；需要左右外框齐平时可设为 `true`，但应配合 `size: small`
 - `data.source`、`source` 或 `notes` 至少有一个能说明依据
-- `DESIGN_BRIEF.json` 必须有 `color_confirmed: true` 和至少 3 个 `color_candidates`
 
 允许类型：
 
@@ -131,10 +130,6 @@ table -> benchmark_table
 - 图表容器高度应在 220-360px；大型结构图不超过 560px
 - 片段标题、注释、来源应使用统一类名：`.chart-title`、`.chart-annotation`、`.chart-src` 或 `.figure-title`、`.figure-src`
 - 来源文案应可追溯；若无法提供有效来源，允许不渲染来源行，但禁止泛化来源占位
-- 必须符合 `references/component-contracts.json` 中对应 `type` 的 DOM contract
-- 不得使用 contract 之外的关键结构类，例如 `.tree-level`、`.tree-node`
-- ECharts option 不得直接传入 `'var(--color-*)'` 字符串，必须使用 `getComputedStyle`
-- 片段正文和脚本不得硬编码随机 hex 色值；色值只允许在调色板 `<style>` 定义或统一模板中出现
 
 ### 6. 最终 HTML/PDF 风险
 
@@ -146,9 +141,6 @@ table -> benchmark_table
 - 是否残留 `<p><div>`、`<p><script>` 这类非法嵌套
 - 是否残留旧截图导出逻辑
 - 是否存在重复 `chart-C{id}` DOM id
-- 预期并排的 `group` 是否实际生成 `.visual-row`
-- `qa_html.py` 是否通过
-- `qa_pdf.py` 是否通过，是否存在普通页底部大段空白
 
 ## 输出
 

@@ -143,6 +143,7 @@ def diagnose(payload: dict[str, Any]) -> dict[str, Any]:
     page_height_px = int(payload.get("pageHeightPx", 0) or 1)
 
     sparse_pages: list[dict[str, Any]] = []
+    terminal_sparse_pages: list[dict[str, Any]] = []
     last_page = max((int(page.get("page", 0)) for page in pages), default=0)
     for page in pages:
         index = int(page.get("page", 0))
@@ -224,12 +225,50 @@ def diagnose(payload: dict[str, Any]) -> dict[str, Any]:
             "suggestions": suggestions,
         })
 
+    if last_page:
+        last_page_item = next((page for page in pages if int(page.get("page", 0)) == last_page), None)
+        prev_page_item = next((page for page in pages if int(page.get("page", 0)) == last_page - 1), None)
+        if last_page_item:
+            last_blank = float(last_page_item.get("blankRatio", 0))
+            last_blocks = int(last_page_item.get("blockCount", 0))
+            if last_blank > 0.55 and last_blocks <= 4 and prev_page_item:
+                prev_blocks = blocks_on_page(blocks, last_page - 1)
+                terminal_blocks = blocks_on_page(blocks, last_page)
+                prev_trailing_visual = trailing_visual(prev_blocks, last_page - 1, page_height_px)
+                first_terminal_block = first_block(terminal_blocks, last_page)
+                suggestions: list[dict[str, Any]] = []
+                reason_parts: list[str] = ["terminal page is underfilled"]
+                if prev_trailing_visual and truthy(str(prev_trailing_visual.get("canShrink", ""))):
+                    suggestions.append({
+                        "action": "compact_prev_page_visual",
+                        "target_block_id": prev_trailing_visual.get("blockId", ""),
+                        "target_chart_id": prev_trailing_visual.get("chartId", ""),
+                        "target_member_chart_ids": prev_trailing_visual.get("memberChartIds", []),
+                        "reason": "previous page trailing visual can absorb terminal text overflow",
+                    })
+                    if str(prev_trailing_visual.get("visualType", "")).strip().lower() in LOW_INFO_TYPES:
+                        reason_parts.append("previous trailing visual is low-info")
+                terminal_sparse_pages.append({
+                    "page": last_page,
+                    "blankRatio": last_blank,
+                    "blankPx": int(last_page_item.get("blankPx", 0)),
+                    "usedPx": int(last_page_item.get("usedPx", 0)),
+                    "textChars": int(last_page_item.get("textChars", 0)),
+                    "reason": "; ".join(reason_parts),
+                    "previous_page_trailing_visual": block_ref(prev_trailing_visual),
+                    "first_terminal_block": block_ref(first_terminal_block),
+                    "pageBlocks": [block_ref(block) for block in terminal_blocks],
+                    "suggestions": suggestions,
+                })
+
     payload["blocks"] = blocks
     payload["pages"] = pages
     payload["sparsePages"] = sparse_pages
+    payload["terminalSparsePages"] = terminal_sparse_pages
     payload["summary"] = {
         "totalPages": len(pages),
         "sparsePages": len(sparse_pages),
+        "terminalSparsePages": len(terminal_sparse_pages),
         "maxBlankRatio": max((float(page.get("blankRatio", 0)) for page in pages), default=0.0),
         "missingMarkers": len(payload.get("missingMarkers", [])),
     }
@@ -257,6 +296,7 @@ def main(argv: list[str]) -> int:
     print(
         f"[LAYOUT_QA] pages={summary.get('totalPages', 0)} "
         f"sparse_pages={summary.get('sparsePages', 0)} "
+        f"terminal_sparse_pages={summary.get('terminalSparsePages', 0)} "
         f"max_blank={summary.get('maxBlankRatio', 0):.0%}"
     )
     missing_markers = payload.get("missingMarkers", [])
@@ -267,6 +307,11 @@ def main(argv: list[str]) -> int:
     for item in payload.get("sparsePages", []):
         print(
             f"[WARN] 第 {item.get('page')} 页空白约 {float(item.get('blankRatio', 0)):.0%} "
+            f"/ {item.get('reason', '')}"
+        )
+    for item in payload.get("terminalSparsePages", []):
+        print(
+            f"[WARN] 末页 {item.get('page')} 空白约 {float(item.get('blankRatio', 0)):.0%} "
             f"/ {item.get('reason', '')}"
         )
     return 0

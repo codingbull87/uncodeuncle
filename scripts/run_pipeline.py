@@ -33,6 +33,17 @@ def sparse_pages(layout_diag_path: Path) -> int:
     return len(items) if isinstance(items, list) else 0
 
 
+def terminal_sparse_pages(layout_diag_path: Path) -> int:
+    if not layout_diag_path.exists():
+        return 0
+    try:
+        payload = json.loads(layout_diag_path.read_text(encoding="utf-8", errors="ignore"))
+    except json.JSONDecodeError:
+        return 0
+    items = payload.get("terminalSparsePages", [])
+    return len(items) if isinstance(items, list) else 0
+
+
 def clear_generated_layout_overrides(report_dir: Path) -> None:
     path = report_dir / "LAYOUT_OVERRIDES.json"
     if path.exists():
@@ -79,7 +90,7 @@ def main(argv: list[str]) -> int:
         override_path = report_dir / "LAYOUT_OVERRIDES.json"
         max_rounds = 3
         for _ in range(max_rounds):
-            if sparse_pages(layout_diag) == 0:
+            if sparse_pages(layout_diag) == 0 and terminal_sparse_pages(layout_diag) == 0:
                 break
             before = file_bytes(override_path)
             run_cmd([python, str(repair_layout), str(report_dir), str(layout_diag), str(override_path)])

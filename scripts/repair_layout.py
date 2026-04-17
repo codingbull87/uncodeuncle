@@ -155,7 +155,8 @@ def rec_index(items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
 def apply_suggestions(effective_items: list[dict[str, Any]], diagnosis: dict[str, Any]) -> list[dict[str, Any]]:
     index = rec_index(effective_items)
     touched: list[str] = []
-    for sparse in diagnosis.get("sparsePages", []):
+    all_sparse = list(diagnosis.get("sparsePages", [])) + list(diagnosis.get("terminalSparsePages", []))
+    for sparse in all_sparse:
         for suggestion in sparse.get("suggestions", []):
             action = str(suggestion.get("action", "")).strip()
             targets = normalize_targets(suggestion)
@@ -163,7 +164,7 @@ def apply_suggestions(effective_items: list[dict[str, Any]], diagnosis: dict[str
                 rec = index.get(chart_id)
                 if not rec:
                     continue
-                if action in {"compact_trailing_visual", "compact_next_visual"}:
+                if action in {"compact_trailing_visual", "compact_next_visual", "compact_prev_page_visual"}:
                     apply_compact_mutation(rec)
                 elif action == "move_trailing_visual_to_section_end":
                     apply_section_end_mutation(rec)
