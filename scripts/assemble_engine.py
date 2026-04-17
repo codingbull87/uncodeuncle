@@ -901,7 +901,93 @@ def load_color_scheme_css(skill_dir: str, report_dir: str) -> str:
 
     color_scheme = brief.get("color_scheme", "mckinsey-blue")
     print(f"[INFO] 配色方案：{color_scheme}")
-    return load_color_palette(skill_dir, color_scheme)
+    palette_css = load_color_palette(skill_dir, color_scheme)
+    return palette_css + build_legacy_token_bridge(color_scheme)
+
+
+def build_legacy_token_bridge(color_scheme: str) -> str:
+    """Map palette tokens onto the older template token names used by split CSS."""
+    if color_scheme == "modern-slate":
+        return """
+:root {
+  --ink: var(--color-text);
+  --ink-strong: var(--color-text);
+  --muted: var(--color-text-secondary);
+  --soft: var(--color-secondary);
+  --line: var(--color-border);
+  --line-strong: var(--color-border);
+  --paper: var(--color-bg);
+  --wash: var(--color-surface);
+  --wash-2: #263449;
+  --brand: var(--color-accent);
+  --brand-dark: var(--color-text);
+  --brand-soft: #27335f;
+  --green: var(--color-positive);
+  --red: var(--color-negative);
+  --amber: #f59e0b;
+  --blue: #60a5fa;
+  --graphite: var(--color-text-secondary);
+  --shadow: 0 2px 16px rgba(0, 0, 0, 0.28);
+}
+html,
+body {
+  background: var(--color-bg);
+}
+.page,
+.chart-container,
+.consulting-figure,
+.kpi-card,
+.insight-card,
+.framework-card,
+.scorecard-item,
+.matrix-cell,
+.risk-cell,
+.heatmap-cell,
+.chain-step,
+.driver-branch,
+.decision-node,
+.swimlane-milestone {
+  background: var(--color-surface);
+}
+td,
+.matrix-cell-body,
+.risk-body,
+.heatmap-body,
+.timeline-body,
+.chain-step-body,
+.driver-body,
+.decision-body,
+.insight-card-body,
+.framework-card-body,
+.scorecard-body {
+  color: var(--color-text-secondary);
+}
+"""
+    return """
+:root {
+  --ink: var(--color-text);
+  --ink-strong: var(--color-text);
+  --muted: var(--color-text-secondary);
+  --soft: var(--color-secondary);
+  --line: var(--color-border);
+  --line-strong: var(--color-border);
+  --paper: var(--color-bg);
+  --wash: var(--color-surface);
+  --wash-2: var(--color-surface);
+  --brand: var(--color-primary);
+  --brand-dark: var(--color-primary-dark);
+  --brand-soft: var(--color-surface);
+  --green: var(--color-positive);
+  --red: var(--color-negative);
+  --amber: var(--color-accent);
+  --blue: #2563eb;
+  --graphite: var(--color-secondary);
+}
+html,
+body {
+  background: var(--color-surface);
+}
+"""
 
 
 def load_static_css(skill_dir: str) -> str:
