@@ -1,5 +1,5 @@
 ---
-name: report-illustrator
+name: md2report
 description: >
   将长篇 Markdown 产业报告重构为咨询风 HTML 报告，并导出分页合理、
   放大仍清晰的 PDF。适用于 8,000-20,000+ 字行业研究、公司研究、
@@ -9,7 +9,7 @@ metadata:
   updated: 2026-04-17
 ---
 
-# Report Illustrator
+# md2report
 
 ## 目标
 

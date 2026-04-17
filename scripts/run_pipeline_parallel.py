@@ -161,7 +161,7 @@ def validate_batch_outputs(report_dir: Path, batch_ids: list[str]) -> None:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description="Run parallel guarded report-illustrator pipeline")
+    parser = argparse.ArgumentParser(description="Run parallel guarded md2report pipeline")
     parser.add_argument("report_dir", help="Report workspace directory")
     parser.add_argument("report_name", help="Output report basename without extension")
     parser.add_argument("--worker-cmd", required=True, help="Command template for one chart fragment task")

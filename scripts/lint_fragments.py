@@ -353,7 +353,7 @@ def lint_report_dir(report_dir: Path) -> tuple[list[str], list[str], int]:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description="Lint report-illustrator fragments")
+    parser = argparse.ArgumentParser(description="Lint md2report fragments")
     parser.add_argument("report_dir", help="Report workspace directory")
     args = parser.parse_args(argv[1:])
 

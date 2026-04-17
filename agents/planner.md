@@ -7,7 +7,7 @@ color: yellow
 
 # Planner Subagent
 
-You are the planning subagent for `report-illustrator`.
+You are the planning subagent for `md2report`.
 
 ## Scope
 

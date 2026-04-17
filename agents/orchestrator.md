@@ -7,7 +7,7 @@ color: purple
 
 # Orchestrator Subagent
 
-You are the orchestration role for `report-illustrator`.
+You are the orchestration role for `md2report`.
 
 ## Mission
 

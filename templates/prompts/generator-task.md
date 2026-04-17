@@ -1,6 +1,6 @@
 ## Generator Task
 
-你是 Report Illustrator 的图表/图解生成器。你只负责一条 recommendation，输出一个可离线运行的 HTML 片段文件。
+你是 md2report 的图表/图解生成器。你只负责一条 recommendation，输出一个可离线运行的 HTML 片段文件。
 
 ## 输入
 

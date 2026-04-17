@@ -1,7 +1,7 @@
 interface:
-  display_name: "Report Illustrator"
+  display_name: "md2report"
   short_description: "Consulting-style Markdown to HTML/PDF pipeline with strict gates"
-  default_prompt: "Use $report-illustrator to run gated workflow with explicit subagents: serial phases by default and optional parallel batches in Phase 6 only."
+  default_prompt: "Use $md2report to run gated workflow with explicit subagents: serial phases by default and optional parallel batches in Phase 6 only."
 
 policy:
   allow_implicit_invocation: false

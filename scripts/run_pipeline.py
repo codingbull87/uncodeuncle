@@ -55,7 +55,7 @@ def file_bytes(path: Path) -> bytes:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description="Run guarded report-illustrator pipeline")
+    parser = argparse.ArgumentParser(description="Run guarded md2report pipeline")
     parser.add_argument("report_dir", help="Report workspace directory")
     parser.add_argument("report_name", help="Output report basename without extension")
     parser.add_argument("--skip-export", action="store_true", help="Only assemble HTML, skip PDF export")

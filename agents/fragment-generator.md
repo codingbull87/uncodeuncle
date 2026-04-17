@@ -8,7 +8,7 @@ color: blue
 
 # Fragment Generator Subagent
 
-You are the fragment-generation subagent for `report-illustrator`.
+You are the fragment-generation subagent for `md2report`.
 
 ## Scope
 

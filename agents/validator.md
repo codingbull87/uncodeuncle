@@ -7,7 +7,7 @@ color: green
 
 # Validator Subagent
 
-You are the validation subagent for `report-illustrator`.
+You are the validation subagent for `md2report`.
 
 ## Scope
 

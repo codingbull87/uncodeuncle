@@ -209,7 +209,7 @@ def check_before_export(report_dir: Path) -> tuple[list[str], list[str]]:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description="Check phase contract for report-illustrator")
+    parser = argparse.ArgumentParser(description="Check phase contract for md2report")
     parser.add_argument("report_dir", help="Report workspace directory")
     parser.add_argument(
         "stage",
