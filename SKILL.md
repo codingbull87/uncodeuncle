@@ -40,6 +40,7 @@ metadata:
 ├── DESIGN_BRIEF.md
 ├── RECOMMENDATIONS.json
 ├── RECOMMENDATIONS.md
+├── LAYOUT_PLAN.json
 ├── VALIDATION.md
 ├── libs/
 │   └── echarts.min.js
@@ -61,6 +62,8 @@ templates/
 ├── prompts/generator-task.md
 ├── prompts/validator-task.md
 └── static/
+    ├── css/
+    │   └── README.md
     ├── base-styles.css
     └── pdf-export.js
 libs/
@@ -217,6 +220,24 @@ why: 可与 C3 并排，避免两个小柱图连续占满整页。
 ```
 
 组装器优先读取 `RECOMMENDATIONS.md` 的 storyboard 字段，再回退到 `RECOMMENDATIONS.json`。因此人工只需改 `enabled`、`anchor`、`position`、`layout`、`group`、`row_title`、`equal_height`、`size` 等字段，即可影响最终 HTML 的插入和排版。
+
+### Phase 3.5 - 页面级排版计划
+
+`assemble.py` 会在组装 HTML 时同步输出 `LAYOUT_PLAN.json`。该文件是机器生成的页面级排版骨架，用于记录每个视觉块的：
+
+- `page_role`：`figure_text`、`paired_visual`、`table_visual`、`kpi_visual`
+- `keep_with_next`：是否倾向于和后续正文绑定
+- `can_shrink`：PDF 微调时是否允许缩小
+- `max_shrink_ratio`：最大缩小比例，避免图表被压得过矮
+- `group` / `row_layout` / `equal_height`：并排视觉行的版式信息
+
+排版原则：
+
+- 普通正文页底部空白应尽量控制在 15%-18% 以内
+- 图文页底部空白可放宽到约 20%-22%
+- 大段留白应主要出现在章节转场，而不是普通正文页随机出现
+- PDF 导出阶段只做微调，不应任意大幅压缩图表
+- 并排卡片必须遵循同一套 header/body/footer 协议，外框、内容起点和底部基线都要尽量对齐
 
 ### Phase 4 - 图表密度与类型选择
 

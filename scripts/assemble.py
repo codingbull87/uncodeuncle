@@ -71,6 +71,22 @@ class PlannedInsertion:
     match_count: int
 
 
+@dataclass
+class LayoutBlock:
+    block_id: str
+    kind: str
+    anchor: str
+    layout: str
+    size: str
+    page_role: str
+    keep_with_next: bool
+    can_shrink: bool
+    max_shrink_ratio: float
+    group: str = ""
+    row_layout: str = ""
+    equal_height: bool = False
+
+
 def read_file(path: str, encoding: str = "utf-8") -> str:
     with open(path, "r", encoding=encoding) as f:
         return f.read()
@@ -124,12 +140,91 @@ def parse_bool(value: Any, default: bool = True) -> bool:
     return default
 
 
+def parse_float(value: Any, default: float) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    return number
+
+
 def parse_occurrence(value: Any) -> int:
     try:
         number = int(value)
     except (TypeError, ValueError):
         return 1
     return max(number, 1)
+
+
+def normalize_layout(value: Any) -> str:
+    text = str(value or "full").strip().lower()
+    if text in ("half", "third", "quarter", "compact", "full"):
+        return text
+    return "full"
+
+
+def normalize_size(value: Any) -> str:
+    text = str(value or "medium").strip().lower()
+    if text in ("small", "medium", "large", "compact"):
+        return text
+    return "medium"
+
+
+def visual_type(rec: dict[str, Any]) -> str:
+    return str(rec.get("type", "")).strip().lower()
+
+
+def infer_page_role(rec: dict[str, Any]) -> str:
+    explicit = str(rec.get("page_role", "") or rec.get("page_role_hint", "")).strip().lower()
+    if explicit:
+        return explicit
+    layout = normalize_layout(rec.get("layout"))
+    vtype = visual_type(rec)
+    if layout in ("half", "third", "quarter", "compact"):
+        return "paired_visual"
+    if "table" in vtype:
+        return "table_visual"
+    if "kpi" in vtype:
+        return "kpi_visual"
+    return "figure_text"
+
+
+def default_max_shrink_ratio(rec: dict[str, Any]) -> float:
+    size = normalize_size(rec.get("size"))
+    layout = normalize_layout(rec.get("layout"))
+    if layout in ("half", "third", "quarter", "compact"):
+        return 0.18
+    if size == "large":
+        return 0.16
+    if size == "small":
+        return 0.22
+    if size == "compact":
+        return 0.14
+    return 0.25
+
+
+def rec_can_shrink(rec: dict[str, Any]) -> bool:
+    if "can_shrink" in rec:
+        return parse_bool(rec.get("can_shrink"), default=True)
+    if "shrink" in rec:
+        return parse_bool(rec.get("shrink"), default=True)
+    vtype = visual_type(rec)
+    if "table" in vtype:
+        return False
+    return True
+
+
+def rec_keep_with_next(rec: dict[str, Any]) -> bool:
+    if "keep_with_next" in rec:
+        return parse_bool(rec.get("keep_with_next"), default=True)
+    if "keep" in rec:
+        return parse_bool(rec.get("keep"), default=True)
+    return normalize_layout(rec.get("layout")) == "full"
+
+
+def rec_max_shrink_ratio(rec: dict[str, Any]) -> float:
+    ratio = parse_float(rec.get("max_shrink_ratio"), default_max_shrink_ratio(rec))
+    return min(max(ratio, 0.0), 0.35)
 
 
 def unwrap_single_markdown_paragraph(html: str) -> str:
@@ -543,9 +638,19 @@ def build_insertion_html(insertions: list[PlannedInsertion]) -> str:
                     row_layout = "half"
                 row_title = str(rec.get("row_title", "") or rec.get("group_title", "")).strip()
                 row_classes = ["visual-row", f"visual-row-{row_layout}"]
-                if row_should_equal_height([item.rec for _, item in members]):
+                equal_height = row_should_equal_height([item.rec for _, item in members])
+                if equal_height:
                     row_classes.append("visual-row-equal")
-                row = [f'<div class="{" ".join(row_classes)}" data-group="{html_lib.escape(group)}">']
+                row_attrs = [
+                    f'class="{" ".join(row_classes)}"',
+                    f'data-group="{html_lib.escape(group)}"',
+                    f'data-row-layout="{row_layout}"',
+                    f'data-equal-height="{str(equal_height).lower()}"',
+                    'data-page-role="paired_visual"',
+                    'data-can-shrink="true"',
+                    'data-max-shrink-ratio="0.18"',
+                ]
+                row = [f'<div {" ".join(row_attrs)}>']
                 if row_title:
                     row.append(f'  <div class="visual-row-title">{html_lib.escape(row_title)}</div>')
                 for member_index, member in members:
@@ -571,10 +676,88 @@ def row_should_equal_height(recs: list[dict[str, Any]]) -> bool:
     return False
 
 
+def build_layout_plan(insertions: list[PlannedInsertion]) -> dict[str, Any]:
+    blocks: list[LayoutBlock] = []
+    used = [False] * len(insertions)
+
+    for index, planned in enumerate(insertions):
+        if used[index]:
+            continue
+        rec = planned.rec
+        group = str(rec.get("group", "")).strip()
+        layout = normalize_layout(rec.get("layout"))
+
+        if group and layout in ("half", "third", "quarter", "compact"):
+            members = [
+                (i, item)
+                for i, item in enumerate(insertions)
+                if not used[i]
+                and item.pos == planned.pos
+                and str(item.rec.get("group", "")).strip() == group
+            ]
+            if len(members) >= 2:
+                layouts = {normalize_layout(item.rec.get("layout")) for _, item in members}
+                if "quarter" in layouts and len(members) >= 4:
+                    row_layout = "quarter"
+                elif "third" in layouts and len(members) >= 3:
+                    row_layout = "third"
+                else:
+                    row_layout = "half"
+                equal_height = row_should_equal_height([item.rec for _, item in members])
+                member_ids = [normalize_chart_id(item.rec.get("id")) for _, item in members]
+                for member_index, _ in members:
+                    used[member_index] = True
+                blocks.append(
+                    LayoutBlock(
+                        block_id="+".join(member_ids),
+                        kind="visual-row",
+                        anchor=planned.anchor,
+                        layout=row_layout,
+                        size="small",
+                        page_role="paired_visual",
+                        keep_with_next=False,
+                        can_shrink=True,
+                        max_shrink_ratio=0.18,
+                        group=group,
+                        row_layout=row_layout,
+                        equal_height=equal_height,
+                    )
+                )
+                continue
+
+        used[index] = True
+        blocks.append(
+            LayoutBlock(
+                block_id=normalize_chart_id(rec.get("id")),
+                kind="visual-block",
+                anchor=planned.anchor,
+                layout=layout,
+                size=normalize_size(rec.get("size")),
+                page_role=infer_page_role(rec),
+                keep_with_next=rec_keep_with_next(rec),
+                can_shrink=rec_can_shrink(rec),
+                max_shrink_ratio=rec_max_shrink_ratio(rec),
+                group=group,
+            )
+        )
+
+    return {
+        "schema": "report-illustrator-layout-plan:v1",
+        "notes": "机器生成的页面级排版计划骨架；当前用于 HTML data-* 标记和 PDF 微调护栏。",
+        "rules": {
+            "ordinary_page_bottom_blank_target": 0.18,
+            "figure_page_bottom_blank_target": 0.22,
+            "chapter_break_allows_large_blank": True,
+            "max_chart_shrink_ratio_default": 0.25,
+        },
+        "blocks": [block.__dict__ for block in blocks],
+    }
+
+
 def wrap_fragment(rec: dict[str, Any], fragment: str, nested: bool = False) -> str:
     chart_id = normalize_chart_id(rec.get("id"))
-    layout = str(rec.get("layout", "full")).strip().lower() or "full"
-    size = str(rec.get("size", "medium")).strip().lower() or "medium"
+    layout = normalize_layout(rec.get("layout"))
+    size = normalize_size(rec.get("size"))
     vtype = str(rec.get("type", "")).strip()
     classes = ["visual-block", f"visual-{layout}", f"visual-size-{size}"]
     if nested:
@@ -582,6 +765,12 @@ def wrap_fragment(rec: dict[str, Any], fragment: str, nested: bool = False) -> s
     attrs = [
         f'class="{" ".join(classes)}"',
         f'data-chart-id="{html_lib.escape(chart_id)}"',
+        f'data-layout="{html_lib.escape(layout)}"',
+        f'data-size="{html_lib.escape(size)}"',
+        f'data-page-role="{html_lib.escape(infer_page_role(rec))}"',
+        f'data-keep-with-next="{str(rec_keep_with_next(rec)).lower()}"',
+        f'data-can-shrink="{str(rec_can_shrink(rec)).lower()}"',
+        f'data-max-shrink-ratio="{rec_max_shrink_ratio(rec):.2f}"',
     ]
     if vtype:
         attrs.append(f'data-visual-type="{html_lib.escape(vtype)}"')
@@ -592,8 +781,9 @@ def inject_charts_into_content(
     content_html: str,
     fragment_map: dict[str, str],
     recommendations: list[dict[str, Any]],
-) -> tuple[str, list[InjectionResult]]:
+) -> tuple[str, list[InjectionResult], dict[str, Any]]:
     insertions, results = plan_insertions(content_html, fragment_map, recommendations)
+    layout_plan = build_layout_plan(insertions)
     by_pos: dict[int, list[PlannedInsertion]] = {}
     for item in insertions:
         by_pos.setdefault(item.pos, []).append(item)
@@ -602,16 +792,31 @@ def inject_charts_into_content(
         insertion_html = "\n" + build_insertion_html(by_pos[pos]) + "\n"
         content_html = content_html[:pos] + insertion_html + content_html[pos:]
 
-    return content_html, results
+    return content_html, results, layout_plan
+
+
+def load_static_css(skill_dir: str) -> str:
+    css_dir = os.path.join(skill_dir, "templates", "static", "css")
+    if os.path.isdir(css_dir):
+        css_files = sorted(glob.glob(os.path.join(css_dir, "*.css")))
+        if css_files:
+            parts = []
+            for css_file in css_files:
+                name = os.path.relpath(css_file, skill_dir)
+                parts.append(f"/* {name} */\n{read_file(css_file)}")
+            return "\n\n".join(parts)
+
+    css_path = os.path.join(skill_dir, "templates", "static", "base-styles.css")
+    return read_file(css_path)
 
 
 def build_html(report_dir: str, output_name: str) -> None:
     skill_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     fragments_dir = os.path.join(report_dir, "chart-fragments")
     content_path = os.path.join(report_dir, "content.html")
-    css_path = os.path.join(skill_dir, "templates", "static", "base-styles.css")
     js_path = os.path.join(skill_dir, "templates", "static", "pdf-export.js")
     output_path = os.path.join(report_dir, output_name + ".html")
+    layout_plan_path = os.path.join(report_dir, "LAYOUT_PLAN.json")
 
     if not os.path.exists(content_path):
         print(f"[ERROR] 找不到正文文件：{content_path}")
@@ -624,10 +829,10 @@ def build_html(report_dir: str, output_name: str) -> None:
         print(f"[WARN] 找不到片段目录或片段文件：{fragments_dir}")
 
     content_html = normalize_cover_content(read_file(content_path))
-    content_with_charts, injection_results = inject_charts_into_content(content_html, fragment_map, recommendations)
+    content_with_charts, injection_results, layout_plan = inject_charts_into_content(content_html, fragment_map, recommendations)
 
     report_title = extract_report_title(content_with_charts, output_name)
-    base_css = read_file(css_path)
+    base_css = load_static_css(skill_dir)
     pdf_js = read_file(js_path)
 
     final_html = f"""<!DOCTYPE html>
@@ -654,7 +859,9 @@ def build_html(report_dir: str, output_name: str) -> None:
 """
 
     write_file(output_path, final_html)
+    write_file(layout_plan_path, json.dumps(layout_plan, ensure_ascii=False, indent=2) + "\n")
     print(f"[DONE] 输出文件：{output_path}")
+    print(f"[DONE] 页面排版计划：{layout_plan_path}")
     print_validation_summary(output_path, injection_results, len(recommendations), len(fragment_map))
 
 

@@ -302,15 +302,42 @@ th:first-child {
 
 .visual-row-equal {
   align-items: stretch;
+  --visual-header-min: 48px;
+  --visual-note-min: 24px;
+  --visual-body-min: 168px;
+  --visual-footer-min: 0px;
 }
 
 .visual-row-equal .visual-block {
   align-self: stretch;
+  display: flex;
+  min-height: 0;
 }
 
 .visual-row-equal .chart-container,
 .visual-row-equal .consulting-figure {
-  height: 100%;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.visual-row-equal .chart-header,
+.visual-row-equal .figure-header {
+  min-height: var(--visual-header-min);
+  flex: 0 0 auto;
+}
+
+.visual-row-equal .chart-annotation,
+.visual-row-equal .figure-note {
+  min-height: var(--visual-note-min);
+  flex: 0 0 auto;
+}
+
+.visual-row-equal .chart-container:not(:has(.chart-annotation)) .chart-header,
+.visual-row-equal .consulting-figure:not(:has(.figure-note)) .figure-header {
+  margin-bottom: calc(12px + var(--visual-note-min));
 }
 
 .visual-row-equal .visual-size-small .chart-container,
@@ -320,9 +347,7 @@ th:first-child {
 
 .visual-row-equal .visual-size-small .consulting-figure,
 .visual-row-equal .visual-size-small .chart-container {
-  --equal-visual-body-height: 168px;
-  display: flex;
-  flex-direction: column;
+  --equal-visual-body-height: var(--visual-body-min);
   min-height: 0;
   overflow: visible !important;
 }
@@ -340,7 +365,15 @@ th:first-child {
 }
 
 .visual-row-equal .visual-size-small .chart-container [id^="chart-C"] {
+  flex: 1 1 var(--equal-visual-body-height);
+  min-height: 120px;
   height: var(--equal-visual-body-height) !important;
+}
+
+.visual-row-equal .visual-size-small .consulting-figure table {
+  flex: 1 0 auto;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .visual-row-equal .visual-size-small .kpi-block,
@@ -401,6 +434,7 @@ th:first-child {
 .visual-row-equal .visual-size-small .component-src {
   margin-top: auto;
   padding-top: 8px;
+  min-height: var(--visual-footer-min);
 }
 
 .chart-container,
@@ -1004,6 +1038,12 @@ th:first-child {
     margin-top: 22pt;
   }
 
+  h2.chapter-page-break {
+    break-before: page;
+    page-break-before: always;
+    margin-top: 0;
+  }
+
   h3 {
     font-size: 12.5pt;
   }
@@ -1045,6 +1085,20 @@ th:first-child {
   }
 
   /* Step 1: allow small text/card grids to paginate between items (not through items). */
+  .visual-block[data-page-role="figure_text"],
+  .visual-row[data-page-role="paired_visual"],
+  .visual-block[data-page-role="table_visual"],
+  .visual-block[data-page-role="kpi_visual"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .visual-block[data-size="compact"],
+  .visual-block[data-layout="compact"] {
+    margin-top: 8pt;
+    margin-bottom: 10pt;
+  }
+
   .visual-size-small .insight-grid,
   .visual-size-small .framework-grid,
   .visual-size-small .scorecard-grid,
