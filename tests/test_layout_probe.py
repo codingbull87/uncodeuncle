@@ -2,7 +2,7 @@ import sys
 import unittest
 from pathlib import Path
 
-SCRIPT_DIR = Path('/Users/zheliu/.codex/skills/report-illustrator/scripts')
+SCRIPT_DIR = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from layout_probe import merge_registry_with_markers
