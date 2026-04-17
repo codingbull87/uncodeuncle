@@ -126,7 +126,12 @@ def strip_tags(value: str) -> str:
 def normalize_anchor(anchor: Any) -> str:
     text = str(anchor or "").strip()
     text = re.sub(r"^#{1,6}\s*", "", text)
-    return strip_tags(text)
+    text = strip_tags(text)
+    # Normalize curly quotes: pandoc gfm+smart uses U+201C (left) for both
+    # opening and closing in Chinese text, but humans may write U+201D (right)
+    # as closing quote in RECOMMENDATIONS. Replace all curly quotes with plain.
+    text = text.replace("\u201c", '"').replace("\u201d", '"')
+    return text
 
 
 def parse_bool(value: Any, default: bool = True) -> bool:
@@ -452,7 +457,7 @@ def fragment_sort_key(path: str) -> tuple[int, str]:
 
 
 def has_renderable_fragment(fragment: str) -> bool:
-    return bool(re.search(r"echarts\.init|<svg\b|<table\b|kpi-val|consulting-|class=\"(?:scorecard|driver-tree|range-band)", fragment, re.I))
+    return bool(re.search(r"echarts\.init|<svg\b|<table\b|kpi-val|consulting-|class=\"(?:scorecard|driver-tree|range-band|timeline|matrix|heatmap)", fragment, re.I))
 
 
 def normalize_cover_content(content_html: str) -> str:
@@ -506,11 +511,15 @@ def iter_heading_matches(content_html: str, anchor_text: str) -> list[re.Match[s
     exact_matches: list[re.Match[str]] = []
     contains_matches: list[re.Match[str]] = []
     heading_pattern = re.compile(r"<h([1-4])\b[^>]*>.*?</h\1>", flags=re.IGNORECASE | re.DOTALL)
+    # Normalize anchor quotes to ASCII for comparison
+    anchor_text = anchor_text.replace("\u201c", '"').replace("\u201d", '"')
     for match in heading_pattern.finditer(content_html):
         heading_text = strip_tags(match.group(0))
-        if heading_text == anchor_text:
+        # Normalize curly quotes in heading too (pandoc gfm+smart uses U+201C for both sides)
+        heading_text_cmp = heading_text.replace("\u201c", '"').replace("\u201d", '"')
+        if heading_text_cmp == anchor_text:
             exact_matches.append(match)
-        elif anchor_text in heading_text:
+        elif anchor_text in heading_text_cmp:
             contains_matches.append(match)
     return exact_matches or contains_matches
 
@@ -795,6 +804,78 @@ def inject_charts_into_content(
     return content_html, results, layout_plan
 
 
+# ─── 配色系统 ───────────────────────────────────────────────────────────────
+
+PALETTE_MAP: dict[str, str] = {
+    "mckinsey-blue":  "McKinsey Blue",
+    "modern-slate":   "Modern Slate",
+    "warm-clay":      "Warm Clay",
+    "forest-green":   "Forest Green",
+    "minimal-light":  "Minimal Light",
+}
+
+
+def load_color_palette(skill_dir: str, color_scheme: str) -> str:
+    """从 color-palettes.md 提取所选调色板的 :root CSS 块。"""
+    palette_path = os.path.join(skill_dir, "references", "color-palettes.md")
+    if not os.path.exists(palette_path):
+        print("[WARN] 找不到 color-palettes.md，使用默认配色")
+        return ""
+
+    content = read_file(palette_path)
+
+    # 调色板标题关键字（用于唯一定位章节）
+    scheme_keys = {
+        "mckinsey-blue":  "A. McKinsey Blue",
+        "modern-slate":   "B. Modern Slate",
+        "warm-clay":      "C. Warm Clay",
+        "forest-green":   "D. Forest Green",
+        "minimal-light":   "E. Minimal Light",
+    }
+    target = scheme_keys.get(color_scheme, "A. McKinsey Blue")
+
+    # 匹配 "## {id}. {name} — ..." 到下一个 ## 标题之间的内容
+    pattern = re.compile(
+        r"(^## " + re.escape(target) + r" — .*?)\n(.*?)(?=^##\s+[A-E]\.|\Z)",
+        re.MULTILINE | re.DOTALL,
+    )
+    m = pattern.search(content)
+    if not m:
+        print(f"[WARN] 在 color-palettes.md 中未找到 '{target}'，使用默认")
+        return ""
+
+    section_body = m.group(2)
+    css_block_pattern = re.compile(r"```css\s*([\s\S]*?)```", re.MULTILINE)
+    cm = css_block_pattern.search(section_body)
+    if not cm:
+        return ""
+
+    css_text = cm.group(1).strip()
+    root_match = re.search(r"(:root\s*\{[\s\S]*?\})", css_text)
+    if root_match:
+        return "\n" + root_match.group(1) + "\n"
+    return "\n" + css_text + "\n"
+
+
+def load_color_scheme_css(skill_dir: str, report_dir: str) -> str:
+    """读取 DESIGN_BRIEF.json 的 color_scheme 字段，返回对应 :root CSS。"""
+    brief_json = os.path.join(report_dir, "DESIGN_BRIEF.json")
+    if not os.path.exists(brief_json):
+        print("[WARN] 找不到 DESIGN_BRIEF.json，使用默认配色")
+        return ""
+
+    try:
+        with open(brief_json, encoding="utf-8") as f:
+            brief = json.load(f)
+    except Exception as e:
+        print(f"[WARN] 读取 DESIGN_BRIEF.json 失败：{e}，使用默认配色")
+        return ""
+
+    color_scheme = brief.get("color_scheme", "mckinsey-blue")
+    print(f"[INFO] 配色方案：{color_scheme}")
+    return load_color_palette(skill_dir, color_scheme)
+
+
 def load_static_css(skill_dir: str) -> str:
     css_dir = os.path.join(skill_dir, "templates", "static", "css")
     if os.path.isdir(css_dir):
@@ -833,6 +914,7 @@ def build_html(report_dir: str, output_name: str) -> None:
 
     report_title = extract_report_title(content_with_charts, output_name)
     base_css = load_static_css(skill_dir)
+    color_css = load_color_scheme_css(skill_dir, report_dir)
     pdf_js = read_file(js_path)
 
     final_html = f"""<!DOCTYPE html>
@@ -843,6 +925,7 @@ def build_html(report_dir: str, output_name: str) -> None:
   <title>{html_lib.escape(report_title)}</title>
   <style>
 {base_css}
+{color_css}
   </style>
   <script src="libs/echarts.min.js"></script>
 </head>

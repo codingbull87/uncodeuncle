@@ -27,6 +27,9 @@ You do not modify recommendations, fragments, assembled HTML, or PDF outputs.
    - No placeholder anchor text (e.g., `CH2_SECTION_2_2`)
    - Has conclusion title
    - No meaningless source label
+7. Design brief contract:
+   - `DESIGN_BRIEF.json` exists
+   - `color_scheme` exists and is valid
 
 ## Decision Contract
 

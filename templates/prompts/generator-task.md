@@ -62,17 +62,20 @@ chart-fragments/C{id}.html
 - 颜色必须有语义，不能随机配色
 - 同一份报告遵循同一套组件语言，不为单张图发明新风格
 
-推荐语义配色：
+推荐语义配色（来自 `DESIGN_BRIEF.json` 的 `color_scheme` 字段）：
 
-| 语义 | 色值 |
-| --- | --- |
-| 主语/核心对象 | `#0f766e` |
-| 深色标题 | `#111827` |
-| 正向/改善 | `#0f7a4f` |
-| 风险/下降 | `#b42318` |
-| 关键提醒 | `#b45309` |
-| 辅助比较 | `#2563eb` |
-| 轴线/边框 | `#d9e2ec` |
+```css
+/* 默认：mckinsey-blue */
+--color-primary: #1e3a5f;
+--color-positive: #166534;
+--color-negative: #991b1b;
+--color-accent: #d97706;
+--color-secondary: #64748b;
+--color-border: #d1d5db;
+--echarts-palette: #1e3a5f, #2563eb, #166534, #d97706, #991b1b;
+```
+
+**必须从 `DESIGN_BRIEF.json` 读取 `color_scheme`**，对照 `references/color-palettes.md` 加载对应色板。所有图表中的色值必须使用 CSS 变量 `var(--color-*)`，不要硬编码任何 hex 值（tooltip 等需要直接字符串的地方除外，但仍需遵循语义语义）。
 
 ## 图表与图解类型
 
@@ -154,15 +157,15 @@ var chart = echarts.init(dom, null, { renderer: 'svg' });
 
 不要使用 `renderer: 'canvas'`。不要使用 html2canvas、jsPDF、PNG 下载按钮或 `downloadChart`。
 
-通用配置：
+通用配置（颜色必须来自 CSS 变量，不要硬编码）：
 
 ```javascript
 var option = {
   animation: false,
-  color: ['#0f766e', '#2563eb', '#0f7a4f', '#b45309', '#b42318'],
+  color: ['var(--color-primary)', 'var(--color-secondary)', 'var(--color-positive)', 'var(--color-accent)', 'var(--color-negative)'],
   tooltip: {
     trigger: 'axis',
-    backgroundColor: '#111827',
+    backgroundColor: 'var(--color-text)',
     borderWidth: 0,
     padding: [8, 12],
     textStyle: { color: '#fff', fontSize: 12 }
@@ -170,19 +173,32 @@ var option = {
   grid: { left: '3%', right: '4%', bottom: '4%', top: 18, containLabel: true },
   xAxis: {
     type: 'category',
-    axisLine: { lineStyle: { color: '#d9e2ec', width: 1 } },
+    axisLine: { lineStyle: { color: 'var(--color-border)', width: 1 } },
     axisTick: { show: false },
-    axisLabel: { color: '#64748b', fontSize: 11 }
+    axisLabel: { color: 'var(--color-secondary)', fontSize: 11 }
   },
   yAxis: {
     type: 'value',
     axisLine: { show: false },
     axisTick: { show: false },
     splitLine: { show: false },
-    axisLabel: { color: '#64748b', fontSize: 11 }
+    axisLabel: { color: 'var(--color-secondary)', fontSize: 11 }
   }
 };
 ```
+
+**重要**：ECharts 不支持直接使用 CSS 变量字符串（如 `'var(--color-primary)'`），需要预先读取 CSS 变量值后传入。因此图表生成时需要先在 JS 中读取变量：
+
+```javascript
+var style = getComputedStyle(document.documentElement);
+var primary = style.getPropertyValue('--color-primary').trim();
+var option = {
+  color: [primary, '#64748b', '#166534', '#d97706', '#991b1b'],
+  // ...
+};
+```
+
+**推荐做法**：在 HTML 片段的 `<style>` 块中定义 CSS 变量，同时在 JS 中通过 `getComputedStyle` 读取实际色值传入 ECharts。
 
 柱状图必须使用圆角并直接标数值：
 
@@ -203,6 +219,18 @@ label: {
 ### ECharts 图表
 
 ```html
+<style>
+  :root {
+    --color-primary: #1e3a5f;
+    --color-primary-dark: #111827;
+    --color-positive: #166534;
+    --color-negative: #991b1b;
+    --color-accent: #d97706;
+    --color-secondary: #64748b;
+    --color-border: #d1d5db;
+    --color-text: #111827;
+  }
+</style>
 <div class="chart-container" id="chart-C1-container">
   <div class="chart-header">
     <div>
@@ -219,36 +247,50 @@ label: {
   var dom = document.getElementById('chart-C1');
   if (!dom || !window.echarts) return;
   var chart = echarts.init(dom, null, { renderer: 'svg' });
+
+  var style = getComputedStyle(document.documentElement);
+  var c = {
+    primary: style.getPropertyValue('--color-primary').trim() || '#1e3a5f',
+    positive: style.getPropertyValue('--color-positive').trim() || '#166534',
+    negative: style.getPropertyValue('--color-negative').trim() || '#991b1b',
+    accent: style.getPropertyValue('--color-accent').trim() || '#d97706',
+    secondary: style.getPropertyValue('--color-secondary').trim() || '#64748b',
+    border: style.getPropertyValue('--color-border').trim() || '#d1d5db',
+    text: style.getPropertyValue('--color-text').trim() || '#111827'
+  };
+
   chart.setOption({
     animation: false,
-    color: ['#0f766e', '#2563eb', '#0f7a4f', '#b45309'],
+    color: [c.primary, c.secondary, c.positive, c.accent, c.negative],
     grid: { left: '3%', right: '4%', bottom: '4%', top: 18, containLabel: true },
     xAxis: {
       type: 'category',
       data: ['蔚来', '理想', '宝马中国', '奔驰中国'],
-      axisLine: { lineStyle: { color: '#d9e2ec', width: 1 } },
+      axisLine: { lineStyle: { color: c.border, width: 1 } },
       axisTick: { show: false },
-      axisLabel: { color: '#64748b', fontSize: 11 }
+      axisLabel: { color: c.secondary, fontSize: 11 }
     },
     yAxis: {
       type: 'value',
       axisLine: { show: false },
       axisTick: { show: false },
       splitLine: { show: false },
-      axisLabel: { color: '#64748b', fontSize: 11 }
+      axisLabel: { color: c.secondary, fontSize: 11 }
     },
     series: [{
       type: 'bar',
       name: '2025 交付量',
       data: [28.5, 50.1, 72.0, 68.4],
-      itemStyle: { color: '#0f766e', borderRadius: [6, 6, 0, 0] },
+      itemStyle: { color: c.primary, borderRadius: [6, 6, 0, 0] },
       barWidth: '42%',
-      label: { show: true, position: 'top', formatter: '{c}', color: '#111827', fontSize: 11, fontWeight: 700 }
+      label: { show: true, position: 'top', formatter: '{c}', color: c.text, fontSize: 11, fontWeight: 700 }
     }]
   });
 })();
 </script>
 ```
+
+**注意**：每个 HTML 片段的 `<style>` 块必须包含当前选中的调色板 CSS 变量定义。这些变量在 Phase 7 组装全量 HTML 时会被外层 CSS 覆盖，但片段本身需要自包含以保证离线可用性。
 
 ### 驱动树
 

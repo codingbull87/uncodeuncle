@@ -1,7 +1,7 @@
 interface:
   display_name: "Report Illustrator"
   short_description: "Consulting-style Markdown to HTML/PDF pipeline with strict gates"
-  default_prompt: "Use $report-illustrator to run the gated workflow, and use explicit subagents in serial mode for planner, validator, and fragment generation."
+  default_prompt: "Use $report-illustrator to run gated workflow with explicit subagents: serial phases by default and optional parallel batches in Phase 6 only."
 
 policy:
   allow_implicit_invocation: false

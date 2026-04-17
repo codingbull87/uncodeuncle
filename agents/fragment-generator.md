@@ -14,6 +14,7 @@ You are the fragment-generation subagent for `report-illustrator`.
 
 Each task handles exactly one recommendation and writes exactly one file:
 - `chart-fragments/C{id}.html`
+- You must receive assigned `chart_id` from orchestrator; do not choose IDs yourself.
 
 ## Hard Rules
 
@@ -24,6 +25,7 @@ Each task handles exactly one recommendation and writes exactly one file:
 5. Do not output meaningless source labels.
 6. No `html2canvas`, `jspdf`, `downloadChart`, or download buttons.
 7. Use conclusion-first title with consistent classes.
+8. Read `DESIGN_BRIEF.json` and apply the assigned `color_scheme`.
 
 ## Forbidden Actions
 

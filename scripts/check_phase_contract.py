@@ -14,6 +14,7 @@ Stages:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -23,6 +24,36 @@ from lint_fragments import lint_report_dir
 
 def has_recommendations(report_dir: Path) -> bool:
     return (report_dir / "RECOMMENDATIONS.md").exists() or (report_dir / "RECOMMENDATIONS.json").exists()
+
+
+def validate_design_brief_json(report_dir: Path) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    path = report_dir / "DESIGN_BRIEF.json"
+    if not path.exists():
+        errors.append("缺少必需文件：DESIGN_BRIEF.json")
+        return errors, warnings
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"DESIGN_BRIEF.json 解析失败：{exc}")
+        return errors, warnings
+
+    if not isinstance(payload, dict):
+        errors.append("DESIGN_BRIEF.json 顶层必须是对象")
+        return errors, warnings
+
+    color_scheme = str(payload.get("color_scheme", "")).strip().lower()
+    allowed = {"mckinsey-blue", "modern-slate", "warm-clay", "forest-green", "minimal-light"}
+    if not color_scheme:
+        errors.append("DESIGN_BRIEF.json 缺少 color_scheme")
+    elif color_scheme not in allowed:
+        errors.append("DESIGN_BRIEF.json color_scheme 非法：" + color_scheme)
+
+    if "narrative_lines" not in payload:
+        warnings.append("DESIGN_BRIEF.json 缺少 narrative_lines，建议补充叙事主线")
+    return errors, warnings
 
 
 def parse_validation_decision(report_dir: Path) -> str:
@@ -96,6 +127,10 @@ def check_before_fragments(report_dir: Path) -> tuple[list[str], list[str]]:
     for name in required:
         if not (report_dir / name).exists():
             errors.append(f"缺少必需文件：{name}")
+
+    brief_errors, brief_warnings = validate_design_brief_json(report_dir)
+    errors.extend(brief_errors)
+    warnings.extend(brief_warnings)
 
     if not has_recommendations(report_dir):
         errors.append("缺少推荐项文件：RECOMMENDATIONS.md 或 RECOMMENDATIONS.json")
