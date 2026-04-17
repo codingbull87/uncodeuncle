@@ -38,10 +38,13 @@ def main(argv: list[str]) -> int:
     check = script_dir / "check_phase_contract.py"
     assemble = script_dir / "assemble.py"
     export = script_dir / "export_pdf.py"
+    qa_html = script_dir / "qa_html.py"
+    qa_pdf = script_dir / "qa_pdf.py"
 
     run_cmd([python, str(check), str(report_dir), "before-fragments"])
     run_cmd([python, str(check), str(report_dir), "before-assemble"])
     run_cmd([python, str(assemble), str(report_dir), args.report_name + "_illustrated"])
+    run_cmd([python, str(qa_html), str(report_dir)])
 
     if args.skip_export:
         print("[DONE] HTML 组装完成（已跳过 PDF 导出）")
@@ -50,6 +53,7 @@ def main(argv: list[str]) -> int:
     run_cmd([python, str(check), str(report_dir), "before-export"])
     html_path = report_dir / f"{args.report_name}_illustrated.html"
     pdf_path = report_dir / f"{args.report_name}_illustrated.pdf"
+    run_cmd([python, str(qa_pdf), str(html_path), str(report_dir / "PDF_QA.json")])
     run_cmd([python, str(export), str(html_path), str(pdf_path)])
     print("[DONE] 流水线完成")
     return 0

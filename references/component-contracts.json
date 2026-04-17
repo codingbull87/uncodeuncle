@@ -1,0 +1,147 @@
+{
+  "schema": "report-illustrator-component-contracts:v1",
+  "description": "Machine-readable fragment DOM contracts used by generators, validators, and lint gates.",
+  "shared": {
+    "container_classes": ["chart-container", "consulting-figure"],
+    "title_classes": ["chart-title", "figure-title"],
+    "source_classes": ["chart-src", "figure-src", "component-src"],
+    "forbidden_classes": ["tree-level", "tree-node"],
+    "forbidden_patterns": [
+      "html2canvas",
+      "jspdf",
+      "downloadChart",
+      "renderer: 'canvas'",
+      "renderer: \"canvas\""
+    ]
+  },
+  "contracts": {
+    "kpi_strip": {
+      "required_any": ["kpi-block", "kpi-strip"],
+      "required_descendants": ["kpi-card", "kpi-label", "kpi-val"],
+      "max_items": 5,
+      "notes": "Use 3-5 KPI cards. Do not force inner grid height."
+    },
+    "bar_compare": {
+      "required_any": ["chart-container"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'bar'", "borderRadius"],
+      "chart_height_min": 180,
+      "chart_height_max": 360
+    },
+    "bar_trend": {
+      "required_any": ["chart-container"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'bar'", "borderRadius"],
+      "chart_height_min": 180,
+      "chart_height_max": 360
+    },
+    "line_trend": {
+      "required_any": ["chart-container"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'line'"],
+      "chart_height_min": 180,
+      "chart_height_max": 360
+    },
+    "waterfall": {
+      "required_any": ["chart-container"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "stack"],
+      "chart_height_min": 220,
+      "chart_height_max": 380
+    },
+    "benchmark_table": {
+      "required_any": ["consulting-figure", "chart-container"],
+      "required_patterns": ["<table"],
+      "max_rows": 12
+    },
+    "risk_matrix": {
+      "required_any": ["risk-matrix"],
+      "required_descendants": ["risk-cell"],
+      "allowed_cell_modifiers": ["high", "mid", "low"],
+      "forbidden_cell_modifiers": ["high-impact", "medium-impact", "low-impact", "high-probability", "medium-probability", "low-probability"],
+      "min_items": 3,
+      "max_items": 6
+    },
+    "matrix_2x2": {
+      "required_any": ["matrix-2x2"],
+      "required_descendants": ["matrix-cell"],
+      "exact_items": 4
+    },
+    "timeline": {
+      "required_any": ["timeline"],
+      "required_descendants": ["timeline-item", "timeline-date", "timeline-title"],
+      "min_items": 3,
+      "max_items": 7
+    },
+    "value_chain": {
+      "required_any": ["value-chain", "process-chain"],
+      "required_descendants": ["chain-step"],
+      "min_items": 3,
+      "max_items": 6,
+      "notes": "For 5-6 steps, CSS should use a two-row layout rather than five cramped columns."
+    },
+    "issue_tree": {
+      "required_any": ["driver-tree"],
+      "required_descendants": ["driver-root", "driver-branches", "driver-branch"]
+    },
+    "driver_tree": {
+      "required_any": ["driver-tree"],
+      "required_descendants": ["driver-root", "driver-branches", "driver-branch"]
+    },
+    "range_band": {
+      "required_any": ["range-band"],
+      "required_descendants": ["range-row", "range-track", "range-fill"],
+      "min_items": 2,
+      "max_items": 6
+    },
+    "football_field": {
+      "required_any": ["football-field", "range-band"],
+      "required_descendants": ["range-row", "range-track", "range-fill"],
+      "min_items": 2,
+      "max_items": 8
+    },
+    "heatmap": {
+      "required_any": ["heatmap-grid"],
+      "required_descendants": ["heatmap-cell"],
+      "allowed_cell_modifiers": ["high", "mid", "low"],
+      "min_items": 3,
+      "max_items": 9
+    },
+    "roadmap": {
+      "required_any": ["swimlane-roadmap"],
+      "required_descendants": ["swimlane", "swimlane-label", "swimlane-track"]
+    },
+    "scorecard": {
+      "required_any": ["scorecard-grid"],
+      "required_descendants": ["scorecard-item", "scorecard-title"],
+      "min_items": 3,
+      "max_items": 8
+    },
+    "decision_tree": {
+      "required_any": ["decision-tree"],
+      "required_descendants": ["decision-node", "decision-title", "decision-body"],
+      "min_items": 3,
+      "max_items": 7
+    },
+    "sankey": {
+      "required_any": ["chart-container"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'sankey'"],
+      "chart_height_min": 260,
+      "chart_height_max": 520
+    },
+    "tree": {
+      "required_any": ["chart-container"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'tree'"],
+      "chart_height_min": 260,
+      "chart_height_max": 520
+    },
+    "gauge": {
+      "required_any": ["chart-container"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'gauge'"],
+      "chart_height_min": 180,
+      "chart_height_max": 320
+    },
+    "insight_cards": {
+      "required_any": ["insight-grid"],
+      "required_descendants": ["insight-card", "insight-card-title", "insight-card-body"],
+      "min_items": 2,
+      "max_items": 6
+    }
+  }
+}

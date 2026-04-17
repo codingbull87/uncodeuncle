@@ -30,6 +30,17 @@ You do not modify recommendations, fragments, assembled HTML, or PDF outputs.
 7. Design brief contract:
    - `DESIGN_BRIEF.json` exists
    - `color_scheme` exists and is valid
+   - `color_confirmed` is true after user/orchestrator confirmation
+   - `color_candidates` includes at least 3 options
+8. Component contract checks:
+   - Each fragment obeys `references/component-contracts.json`
+   - No unknown structural classes
+   - No ECharts CSS variable strings in option objects
+   - No hardcoded hex colors outside palette/style definitions
+9. Final layout checks:
+   - Expected grouped recommendations actually produce `.visual-row`
+   - HTML QA passes before export
+   - PDF QA passes after export when final HTML/PDF exists
 
 ## Decision Contract
 

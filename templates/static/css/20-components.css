@@ -310,8 +310,13 @@
 .value-chain,
 .process-chain {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
+}
+
+.process-chain:has(.chain-step:nth-child(5)),
+.value-chain:has(.chain-step:nth-child(5)) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .chain-step {
@@ -536,4 +541,3 @@
   text-align: right;
   font-weight: 800;
 }
-

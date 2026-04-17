@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from assemble_engine import normalize_chart_id, numeric_chart_id, parse_recommendations
-from lint_fragments import lint_fragment, lint_report_dir
+from lint_fragments import lint_fragment, lint_report_dir, load_contracts, load_recommendation_types
 
 
 PROTECTED_FILES = [
@@ -109,12 +109,14 @@ def run_worker(worker_cmd: str, report_dir: Path, chart_id: str) -> tuple[str, i
 def validate_batch_outputs(report_dir: Path, batch_ids: list[str]) -> None:
     errors: list[str] = []
     warnings: list[str] = []
+    rec_types = load_recommendation_types(report_dir)
+    contracts_payload = load_contracts()
     for chart_id in batch_ids:
         path = report_dir / "chart-fragments" / f"{chart_id}.html"
         if not path.exists() or path.stat().st_size == 0:
             errors.append(f"{chart_id}: 片段文件缺失或为空")
             continue
-        file_errors, file_warnings = lint_fragment(path)
+        file_errors, file_warnings = lint_fragment(path, visual_type=rec_types.get(chart_id, ""), contracts_payload=contracts_payload)
         errors.extend(file_errors)
         warnings.extend(file_warnings)
     for item in warnings:
@@ -150,6 +152,8 @@ def main(argv: list[str]) -> int:
     check = script_dir / "check_phase_contract.py"
     assemble = script_dir / "assemble.py"
     export = script_dir / "export_pdf.py"
+    qa_html = script_dir / "qa_html.py"
+    qa_pdf = script_dir / "qa_pdf.py"
 
     run_cmd([python, str(check), str(report_dir), "before-fragments"])
 
@@ -201,6 +205,7 @@ def main(argv: list[str]) -> int:
 
     run_cmd([python, str(check), str(report_dir), "before-assemble"])
     run_cmd([python, str(assemble), str(report_dir), args.report_name + "_illustrated"])
+    run_cmd([python, str(qa_html), str(report_dir)])
 
     if args.skip_export:
         print("[DONE] 并行流水线完成（已跳过 PDF 导出）")
@@ -209,6 +214,7 @@ def main(argv: list[str]) -> int:
     run_cmd([python, str(check), str(report_dir), "before-export"])
     html_path = report_dir / f"{args.report_name}_illustrated.html"
     pdf_path = report_dir / f"{args.report_name}_illustrated.pdf"
+    run_cmd([python, str(qa_pdf), str(html_path), str(report_dir / "PDF_QA.json")])
     run_cmd([python, str(export), str(html_path), str(pdf_path)])
     print("[DONE] 并行流水线完成")
     return 0

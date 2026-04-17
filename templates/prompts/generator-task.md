@@ -75,7 +75,9 @@ chart-fragments/C{id}.html
 --echarts-palette: #1e3a5f, #2563eb, #166534, #d97706, #991b1b;
 ```
 
-**必须从 `DESIGN_BRIEF.json` 读取 `color_scheme`**，对照 `references/color-palettes.md` 加载对应色板。所有图表中的色值必须使用 CSS 变量 `var(--color-*)`，不要硬编码任何 hex 值（tooltip 等需要直接字符串的地方除外，但仍需遵循语义语义）。
+**必须从 `DESIGN_BRIEF.json` 读取 `color_scheme`**，对照 `references/color-palettes.md` 加载对应色板。HTML/CSS 中使用 CSS 变量。ECharts option 中不得直接传入 `'var(--color-*)'` 字符串，必须用 `getComputedStyle` 读取变量值后传入。
+
+生成前必须读取 `references/component-contracts.json`，并按 recommendation 的 `type` 使用对应 DOM contract。禁止自创结构类名。
 
 ## 图表与图解类型
 
@@ -129,6 +131,7 @@ chart-fragments/C{id}.html
 并排规则：
 
 - 两个或多个 recommendation 只有在 `group` 相同、锚点和插入位置相同、且 `layout` 为 `half`/`third`/`compact` 时才会并排
+- 如果两个组件来源于不同小节但确实需要并排，planner 必须给它们设置相同的 `group_anchor` 或 `row_anchor`，让组装器使用共同锚点注入
 - `row_title` 可作为并排行标题
 - 默认不要把普通组件硬拉高；如果需要左右外框齐平，设置 `equal_height: true`，并保持 `size: small`
 - `equal_height: true` 会启用并排小组件压缩样式，缩小 KPI 卡片 padding/字号和小图表高度；只能拉齐 `.chart-container` / `.consulting-figure` 外层，不要给 `.kpi-block`、`.insight-grid` 等内部网格写固定高度或 `height: 100%`
@@ -157,15 +160,25 @@ var chart = echarts.init(dom, null, { renderer: 'svg' });
 
 不要使用 `renderer: 'canvas'`。不要使用 html2canvas、jsPDF、PNG 下载按钮或 `downloadChart`。
 
-通用配置（颜色必须来自 CSS 变量，不要硬编码）：
+通用配置（颜色必须来自 CSS 变量读取结果，不要把 `var(...)` 直接传给 ECharts）：
 
 ```javascript
+var style = getComputedStyle(document.documentElement);
+var c = {
+  primary: style.getPropertyValue('--color-primary').trim() || '#1e3a5f',
+  positive: style.getPropertyValue('--color-positive').trim() || '#166534',
+  negative: style.getPropertyValue('--color-negative').trim() || '#991b1b',
+  accent: style.getPropertyValue('--color-accent').trim() || '#d97706',
+  secondary: style.getPropertyValue('--color-secondary').trim() || '#64748b',
+  border: style.getPropertyValue('--color-border').trim() || '#d1d5db',
+  text: style.getPropertyValue('--color-text').trim() || '#111827'
+};
 var option = {
   animation: false,
-  color: ['var(--color-primary)', 'var(--color-secondary)', 'var(--color-positive)', 'var(--color-accent)', 'var(--color-negative)'],
+  color: [c.primary, c.secondary, c.positive, c.accent, c.negative],
   tooltip: {
     trigger: 'axis',
-    backgroundColor: 'var(--color-text)',
+    backgroundColor: c.text,
     borderWidth: 0,
     padding: [8, 12],
     textStyle: { color: '#fff', fontSize: 12 }
@@ -173,16 +186,16 @@ var option = {
   grid: { left: '3%', right: '4%', bottom: '4%', top: 18, containLabel: true },
   xAxis: {
     type: 'category',
-    axisLine: { lineStyle: { color: 'var(--color-border)', width: 1 } },
+    axisLine: { lineStyle: { color: c.border, width: 1 } },
     axisTick: { show: false },
-    axisLabel: { color: 'var(--color-secondary)', fontSize: 11 }
+    axisLabel: { color: c.secondary, fontSize: 11 }
   },
   yAxis: {
     type: 'value',
     axisLine: { show: false },
     axisTick: { show: false },
     splitLine: { show: false },
-    axisLabel: { color: 'var(--color-secondary)', fontSize: 11 }
+    axisLabel: { color: c.secondary, fontSize: 11 }
   }
 };
 ```
@@ -198,17 +211,17 @@ var option = {
 };
 ```
 
-**推荐做法**：在 HTML 片段的 `<style>` 块中定义 CSS 变量，同时在 JS 中通过 `getComputedStyle` 读取实际色值传入 ECharts。
+**唯一推荐做法**：HTML/CSS 使用变量；ECharts JS 使用 `getComputedStyle` 读取变量后的实际色值。不要把 `var(--color-primary)` 直接写进 ECharts option。
 
 柱状图必须使用圆角并直接标数值：
 
 ```javascript
-itemStyle: { color: '#0f766e', borderRadius: [6, 6, 0, 0] },
+itemStyle: { color: c.primary, borderRadius: [6, 6, 0, 0] },
 label: {
   show: true,
   position: 'top',
   formatter: '{c}',
-  color: '#111827',
+  color: c.text,
   fontSize: 11,
   fontWeight: 700
 }
@@ -290,7 +303,7 @@ label: {
 </script>
 ```
 
-**注意**：每个 HTML 片段的 `<style>` 块必须包含当前选中的调色板 CSS 变量定义。这些变量在 Phase 7 组装全量 HTML 时会被外层 CSS 覆盖，但片段本身需要自包含以保证离线可用性。
+**注意**：每个 HTML 片段可以包含当前选中的调色板 CSS 变量定义以便离线预览，但最终全量 HTML 会由 Phase 7 注入统一色板。片段正文和脚本中禁止硬编码随机 hex 色值。
 
 ### 驱动树
 

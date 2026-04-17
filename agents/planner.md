@@ -33,6 +33,7 @@ You must not generate chart fragments, assemble HTML, or export PDF.
 4. Do not place visuals into cover internals. Use valid `position`.
 5. Keep type mix balanced; avoid bar-chart monoculture.
 6. For low-information items, use `half`/`third`/`compact` and grouped rows.
+   - Grouped rows must share the same `anchor`/`position`, or explicitly share `group_anchor` / `row_anchor`.
 7. Ensure titles are conclusion-first statements, not generic labels.
 8. `DESIGN_BRIEF.json` must contain valid `color_scheme`:
    - `mckinsey-blue`
@@ -40,6 +41,9 @@ You must not generate chart fragments, assemble HTML, or export PDF.
    - `warm-clay`
    - `forest-green`
    - `minimal-light`
+9. Phase 2 must present at least 3 palette candidates to the user before finalizing.
+10. Do not set `color_confirmed: true` unless the user explicitly selected a palette or the orchestrator passed a confirmed palette.
+11. `DESIGN_BRIEF.json` must include `color_candidates` and `color_selected_by` (`user` or `orchestrator-confirmed`) when `color_confirmed` is true.
 
 ## Forbidden Actions
 
@@ -53,3 +57,4 @@ When done, report:
 - Number of recommendations
 - Type distribution
 - Potential pagination risks
+- Palette candidates and whether the palette is confirmed

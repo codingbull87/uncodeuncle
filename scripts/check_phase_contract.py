@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 from lint_fragments import lint_report_dir
+from qa_html import find_html, run_qa
 
 
 def has_recommendations(report_dir: Path) -> bool:
@@ -50,6 +51,13 @@ def validate_design_brief_json(report_dir: Path) -> tuple[list[str], list[str]]:
         errors.append("DESIGN_BRIEF.json 缺少 color_scheme")
     elif color_scheme not in allowed:
         errors.append("DESIGN_BRIEF.json color_scheme 非法：" + color_scheme)
+
+    if payload.get("color_confirmed") is not True:
+        errors.append("DESIGN_BRIEF.json 缺少 color_confirmed=true；必须先完成用户配色确认")
+
+    candidates = payload.get("color_candidates")
+    if not isinstance(candidates, list) or len(candidates) < 3:
+        errors.append("DESIGN_BRIEF.json 缺少至少 3 个 color_candidates")
 
     if "narrative_lines" not in payload:
         warnings.append("DESIGN_BRIEF.json 缺少 narrative_lines，建议补充叙事主线")
@@ -170,6 +178,15 @@ def check_before_export(report_dir: Path) -> tuple[list[str], list[str]]:
     illustrated = find_illustrated_html(report_dir)
     if not illustrated:
         errors.append("未找到 *_illustrated.html，禁止进入 Phase 8")
+        return errors, warnings
+
+    html_path = find_html(report_dir, None)
+    if not html_path:
+        errors.append("未找到可执行 HTML QA 的 *_illustrated.html")
+        return errors, warnings
+    html_errors, html_warnings, _ = run_qa(report_dir, html_path)
+    errors.extend("HTML QA 不合格：" + item for item in html_errors)
+    warnings.extend("HTML QA 告警：" + item for item in html_warnings)
     return errors, warnings
 
 

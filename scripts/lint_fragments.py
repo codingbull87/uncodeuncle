@@ -9,9 +9,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 
 PLACEHOLDER_ANCHOR = re.compile(r"\b[A-Z]{2,}_[A-Z0-9_]{2,}\b")
@@ -29,11 +31,233 @@ SOURCE_BLOCK = re.compile(
     flags=re.IGNORECASE | re.DOTALL,
 )
 HEIGHT_PX = re.compile(r"height\s*:\s*(\d{2,4})px", flags=re.IGNORECASE)
+CLASS_ATTR = re.compile(r'class=["\']([^"\']+)["\']', flags=re.IGNORECASE)
+HEX_COLOR = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+ECHARTS_CSS_VAR_STRING = re.compile(r"['\"]var\(--color-[^)]+\)['\"]")
+ECHARTS_INIT = re.compile(r"echarts\.init\s*\(", flags=re.IGNORECASE)
+SVG_RENDERER = re.compile(r"renderer\s*:\s*['\"]svg['\"]", flags=re.IGNORECASE)
+CHART_ID = re.compile(r'id=["\'](chart-C\d+)["\']', flags=re.IGNORECASE)
+STYLE_BLOCK = re.compile(r"<style\b[^>]*>.*?</style>", flags=re.IGNORECASE | re.DOTALL)
+
+ALLOWED_STRUCTURAL_CLASSES = {
+    "chart-container",
+    "chart-header",
+    "chart-title",
+    "chart-kicker",
+    "chart-annotation",
+    "chart-src",
+    "consulting-figure",
+    "figure-header",
+    "figure-title",
+    "figure-kicker",
+    "figure-note",
+    "figure-src",
+    "component-src",
+    "kpi-block",
+    "kpi-strip",
+    "kpi-card",
+    "kpi-label",
+    "kpi-val",
+    "kpi-unit",
+    "kpi-sub",
+    "green",
+    "red",
+    "amber",
+    "blue",
+    "insight-grid",
+    "insight-card",
+    "insight-card-title",
+    "insight-card-body",
+    "framework-grid",
+    "framework-card",
+    "framework-card-title",
+    "framework-card-body",
+    "scorecard-grid",
+    "scorecard-item",
+    "scorecard-score",
+    "scorecard-title",
+    "scorecard-body",
+    "matrix-2x2",
+    "matrix-cell",
+    "matrix-cell-title",
+    "matrix-cell-body",
+    "emphasis",
+    "risk-matrix",
+    "risk-cell",
+    "risk-title",
+    "risk-body",
+    "heatmap-grid",
+    "heatmap-cell",
+    "heatmap-title",
+    "heatmap-body",
+    "high",
+    "mid",
+    "low",
+    "timeline",
+    "timeline-item",
+    "timeline-date",
+    "timeline-title",
+    "timeline-body",
+    "value-chain",
+    "process-chain",
+    "chain-step",
+    "chain-step-title",
+    "chain-step-body",
+    "driver-tree",
+    "driver-root",
+    "driver-branches",
+    "driver-branch",
+    "driver-title",
+    "driver-body",
+    "range-band",
+    "football-field",
+    "range-row",
+    "range-label",
+    "range-track",
+    "range-fill",
+    "range-marker",
+    "range-value",
+    "swimlane-roadmap",
+    "swimlane",
+    "swimlane-label",
+    "swimlane-track",
+    "swimlane-milestone",
+    "decision-tree",
+    "decision-node",
+    "decision-title",
+    "decision-body",
+    "primary",
+    "lollipop-list",
+    "lollipop-row",
+    "lollipop-label",
+    "lollipop-track",
+    "lollipop-dot",
+    "lollipop-value",
+}
 
 
 def strip_tags(value: str) -> str:
     text = re.sub(r"<[^>]+>", "", value)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def skill_dir_from_script() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def load_contracts() -> dict[str, Any]:
+    path = skill_dir_from_script() / "references" / "component-contracts.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"contracts": {}, "shared": {}}
+    return payload if isinstance(payload, dict) else {"contracts": {}, "shared": {}}
+
+
+def load_recommendation_types(report_dir: Path) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    path = report_dir / "RECOMMENDATIONS.json"
+    if not path.exists():
+        return mapping
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return mapping
+    if not isinstance(payload, list):
+        return mapping
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        raw_id = str(item.get("id", "")).strip()
+        if not raw_id:
+            continue
+        match = re.search(r"\d+", raw_id)
+        chart_id = "C" + match.group(0) if match else raw_id
+        mapping[chart_id] = str(item.get("type", "")).strip().lower()
+    return mapping
+
+
+def classes_in(text: str) -> set[str]:
+    result: set[str] = set()
+    for attr in CLASS_ATTR.findall(text):
+        result.update(cls for cls in re.split(r"\s+", attr.strip()) if cls)
+    return result
+
+
+def strip_style_blocks(text: str) -> str:
+    return STYLE_BLOCK.sub("", text)
+
+
+def count_class(text: str, class_name: str) -> int:
+    count = 0
+    for attr in CLASS_ATTR.findall(text):
+        if class_name in re.split(r"\s+", attr.strip()):
+            count += 1
+    return count
+
+
+def lint_contract(path: Path, text: str, visual_type: str, contracts_payload: dict[str, Any]) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    if not visual_type:
+        return errors, warnings
+
+    contracts = contracts_payload.get("contracts", {})
+    contract = contracts.get(visual_type)
+    if not isinstance(contract, dict):
+        warnings.append(f"{path.name}: 未知图表类型，无法执行组件协议检查（{visual_type}）")
+        return errors, warnings
+
+    present = classes_in(text)
+    required_any = contract.get("required_any", [])
+    if required_any and not any(cls in present for cls in required_any):
+        errors.append(f"{path.name}: {visual_type} 缺少必需根/布局类之一：{', '.join(required_any)}")
+
+    for cls in contract.get("required_descendants", []):
+        if cls not in present:
+            errors.append(f"{path.name}: {visual_type} 缺少必需子类：{cls}")
+
+    for pattern in contract.get("required_patterns", []):
+        if pattern not in text:
+            errors.append(f"{path.name}: {visual_type} 缺少必需片段：{pattern}")
+
+    exact_items = contract.get("exact_items")
+    min_items = contract.get("min_items")
+    max_items = contract.get("max_items")
+    item_class = None
+    for candidate in (
+        "kpi-card",
+        "risk-cell",
+        "matrix-cell",
+        "timeline-item",
+        "chain-step",
+        "range-row",
+        "heatmap-cell",
+        "scorecard-item",
+        "decision-node",
+        "insight-card",
+    ):
+        if candidate in contract.get("required_descendants", []):
+            item_class = candidate
+            break
+    if item_class:
+        item_count = count_class(text, item_class)
+        if exact_items is not None and item_count != int(exact_items):
+            errors.append(f"{path.name}: {visual_type} 需要 {exact_items} 个 {item_class}，实际 {item_count}")
+        if min_items is not None and item_count < int(min_items):
+            errors.append(f"{path.name}: {visual_type} 的 {item_class} 数量过少：{item_count} < {min_items}")
+        if max_items is not None and item_count > int(max_items):
+            warnings.append(f"{path.name}: {visual_type} 的 {item_class} 数量偏多：{item_count} > {max_items}")
+
+    for cls in contract.get("forbidden_cell_modifiers", []):
+        if cls in present:
+            errors.append(f"{path.name}: {visual_type} 使用了未受样式支持的语义类：{cls}")
+
+    for cls in contracts_payload.get("shared", {}).get("forbidden_classes", []):
+        if cls in present:
+            errors.append(f"{path.name}: 使用了组件协议禁止的类：{cls}")
+
+    return errors, warnings
 
 
 def has_renderable_fragment(fragment: str) -> bool:
@@ -46,16 +270,36 @@ def has_renderable_fragment(fragment: str) -> bool:
     )
 
 
-def lint_fragment(path: Path) -> tuple[list[str], list[str]]:
+def lint_fragment(path: Path, visual_type: str = "", contracts_payload: dict[str, Any] | None = None) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     text = path.read_text(encoding="utf-8", errors="ignore")
+    contracts_payload = contracts_payload or load_contracts()
 
     if PLACEHOLDER_ANCHOR.search(text):
         errors.append(f"{path.name}: 包含占位锚点文本（如 CH2_SECTION_2_2）")
 
     if not has_renderable_fragment(text):
         errors.append(f"{path.name}: 片段疑似空壳，未检测到可渲染图/表/结构组件")
+
+    present_classes = classes_in(text)
+    unknown = sorted(cls for cls in present_classes if cls not in ALLOWED_STRUCTURAL_CLASSES and not cls.startswith("chart-C"))
+    if unknown:
+        errors.append(f"{path.name}: 包含未登记组件类：{', '.join(unknown)}")
+
+    if ECHARTS_INIT.search(text):
+        if not SVG_RENDERER.search(text):
+            errors.append(f"{path.name}: ECharts 片段必须显式使用 renderer: 'svg'")
+        if ECHARTS_CSS_VAR_STRING.search(text):
+            errors.append(f"{path.name}: ECharts option 不能直接传入 CSS 变量字符串，需用 getComputedStyle 读取实际色值")
+
+    non_style_text = strip_style_blocks(text)
+    hardcoded_hex = sorted(set(HEX_COLOR.findall(non_style_text)))
+    if hardcoded_hex:
+        errors.append(f"{path.name}: 片段正文/脚本含硬编码色值：{', '.join(hardcoded_hex)}")
+
+    if re.search(r'class=["\'][^"\']*\bconsulting-figure\b[^"\']*\b(?:risk-matrix|matrix-2x2|heatmap-grid|decision-tree|driver-tree|range-band|process-chain|value-chain)\b', text, flags=re.IGNORECASE):
+        errors.append(f"{path.name}: 外层 .consulting-figure 不应同时承担内部布局类")
 
     titles = [strip_tags(item) for item in TITLE_BLOCK.findall(text) if strip_tags(item)]
     if not titles:
@@ -80,6 +324,10 @@ def lint_fragment(path: Path) -> tuple[list[str], list[str]]:
     if re.search(r"<!DOCTYPE|<html\b|<head\b|<body\b", text, flags=re.IGNORECASE):
         errors.append(f"{path.name}: 片段包含完整 HTML 页面标签")
 
+    contract_errors, contract_warnings = lint_contract(path, text, visual_type, contracts_payload)
+    errors.extend(contract_errors)
+    warnings.extend(contract_warnings)
+
     return errors, warnings
 
 
@@ -94,8 +342,11 @@ def lint_report_dir(report_dir: Path) -> tuple[list[str], list[str], int]:
 
     errors: list[str] = []
     warnings: list[str] = []
+    rec_types = load_recommendation_types(report_dir)
+    contracts_payload = load_contracts()
     for path in files:
-        file_errors, file_warnings = lint_fragment(path)
+        chart_id = path.stem.upper()
+        file_errors, file_warnings = lint_fragment(path, visual_type=rec_types.get(chart_id, ""), contracts_payload=contracts_payload)
         errors.extend(file_errors)
         warnings.extend(file_warnings)
     return errors, warnings, len(files)

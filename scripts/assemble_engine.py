@@ -569,7 +569,7 @@ def plan_insertions(
 
     for rec in recommendations:
         chart_id = normalize_chart_id(rec.get("id"))
-        anchor_text = normalize_anchor(rec.get("anchor"))
+        anchor_text = normalize_anchor(rec.get("group_anchor") or rec.get("row_anchor") or rec.get("anchor"))
 
         if not chart_id:
             results.append(InjectionResult("", anchor_text, "WARN", "缺少 id，跳过"))
@@ -616,6 +616,33 @@ def plan_insertions(
         results.append(InjectionResult(chart_id, anchor_text, "OK", f"已规划注入第 {occurrence}/{len(matches)} 个锚点"))
 
     return insertions, results
+
+
+def diagnose_group_assembly(insertions: list[PlannedInsertion]) -> list[InjectionResult]:
+    grouped: dict[str, list[PlannedInsertion]] = {}
+    for item in insertions:
+        group = str(item.rec.get("group", "")).strip()
+        layout = normalize_layout(item.rec.get("layout"))
+        if group and layout in ("half", "third", "quarter", "compact"):
+            grouped.setdefault(group, []).append(item)
+
+    diagnostics: list[InjectionResult] = []
+    for group, items in sorted(grouped.items()):
+        if len(items) < 2:
+            continue
+        positions = {item.pos for item in items}
+        if len(positions) > 1:
+            chart_ids = ", ".join(normalize_chart_id(item.rec.get("id")) for item in items)
+            anchors = "；".join(sorted({item.anchor for item in items}))
+            diagnostics.append(
+                InjectionResult(
+                    "GROUP",
+                    group,
+                    "WARN",
+                    f"group 未形成并排：{chart_ids} 的插入位置不同。请使用共同 anchor/position 或显式 group_anchor。anchors={anchors}",
+                )
+            )
+    return diagnostics
 
 
 def build_insertion_html(insertions: list[PlannedInsertion]) -> str:
@@ -792,6 +819,7 @@ def inject_charts_into_content(
     recommendations: list[dict[str, Any]],
 ) -> tuple[str, list[InjectionResult], dict[str, Any]]:
     insertions, results = plan_insertions(content_html, fragment_map, recommendations)
+    results.extend(diagnose_group_assembly(insertions))
     layout_plan = build_layout_plan(insertions)
     by_pos: dict[int, list[PlannedInsertion]] = {}
     for item in insertions:

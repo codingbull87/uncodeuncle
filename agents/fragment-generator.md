@@ -26,6 +26,9 @@ Each task handles exactly one recommendation and writes exactly one file:
 6. No `html2canvas`, `jspdf`, `downloadChart`, or download buttons.
 7. Use conclusion-first title with consistent classes.
 8. Read `DESIGN_BRIEF.json` and apply the assigned `color_scheme`.
+9. Read `references/component-contracts.json` and obey the contract for the assigned recommendation type.
+10. Do not invent component classes. Use only classes documented in `references/style-guide.md` and `component-contracts.json`.
+11. ECharts options must read CSS variable values with `getComputedStyle`; do not pass strings like `'var(--color-primary)'` into ECharts.
 
 ## Forbidden Actions
 
@@ -39,4 +42,5 @@ Each task handles exactly one recommendation and writes exactly one file:
 Return:
 - Output file path
 - Chart type used
+- Component contract used
 - Any data limitations or fallback choice

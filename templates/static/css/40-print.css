@@ -207,6 +207,20 @@
     box-shadow: none;
   }
 
+  .process-chain,
+  .value-chain {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .risk-matrix,
+  .heatmap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .decision-tree {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   table {
     font-size: 9.5pt;
   }
