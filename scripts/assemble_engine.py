@@ -363,24 +363,37 @@ def clean_fragment(fragment_html: str) -> str:
     return fragment_html.strip()
 
 
-def parse_recommendations(report_dir: str) -> list[dict[str, Any]]:
+def parse_recommendations_base(report_dir: str) -> list[dict[str, Any]]:
     rec_md = os.path.join(report_dir, "RECOMMENDATIONS.md")
     if os.path.exists(rec_md):
         content = read_file(rec_md)
         storyboard_items = parse_storyboard_markdown(content)
         if storyboard_items:
-            return apply_layout_overrides(storyboard_items, load_layout_overrides(report_dir))
+            return storyboard_items
 
     rec_json = os.path.join(report_dir, "RECOMMENDATIONS.json")
     if os.path.exists(rec_json):
         with open(rec_json, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return apply_layout_overrides(normalize_recommendation_payload(data), load_layout_overrides(report_dir))
+        return normalize_recommendation_payload(data)
 
     if os.path.exists(rec_md):
-        return apply_layout_overrides(parse_json_blocks_from_markdown(read_file(rec_md)), load_layout_overrides(report_dir))
+        return parse_json_blocks_from_markdown(read_file(rec_md))
 
     return []
+
+
+def parse_recommendations(
+    report_dir: str,
+    *,
+    apply_generated_overrides: bool = True,
+    override_payload: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    items = parse_recommendations_base(report_dir)
+    if not apply_generated_overrides:
+        return items
+    payload = override_payload if override_payload is not None else load_layout_overrides(report_dir)
+    return apply_layout_overrides(items, payload)
 
 
 def load_layout_overrides(report_dir: str) -> dict[str, Any]:
@@ -415,6 +428,11 @@ def apply_layout_overrides(items: list[dict[str, Any]], payload: dict[str, Any])
         "row_align",
         "print_compact",
         "position",
+        "group",
+        "row_title",
+        "group_title",
+        "group_anchor",
+        "anchor",
         "anchor_occurrence",
     }
     changed = 0

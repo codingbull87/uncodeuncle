@@ -54,11 +54,38 @@
   function applyChapterBreaks(pageHeight) {
     var page = document.querySelector('.page');
     if (!page) return;
+    function nextContentSibling(heading) {
+      var node = heading.nextElementSibling;
+      while (node) {
+        if (node.matches && node.matches('h1,h2,h3,.visual-row,.visual-block:not(.visual-block-nested),table,blockquote,p,ul,ol')) {
+          return node;
+        }
+        node = node.nextElementSibling;
+      }
+      return null;
+    }
+    function bundleNeedPx(heading) {
+      var need = Math.ceil(heading.getBoundingClientRect().height || 0) + 36;
+      var count = 0;
+      var node = nextContentSibling(heading);
+      while (node && count < 2) {
+        var rect = node.getBoundingClientRect();
+        if (rect.height) {
+          need += Math.min(Math.ceil(rect.height), count === 0 ? 210 : 140);
+          count += 1;
+        }
+        if (node.matches && node.matches('h2')) break;
+        node = node.nextElementSibling;
+      }
+      return Math.max(150, Math.min(need, 340));
+    }
     var headings = Array.prototype.slice.call(page.querySelectorAll('h2'));
     headings.forEach(function (heading, index) {
       if (index === 0) return;
       var used = elementTopWithinPage(heading, page) % pageHeight;
-      if (used > pageHeight * 0.58) {
+      var remain = pageHeight - used;
+      var need = bundleNeedPx(heading);
+      if (used > pageHeight * 0.70 && remain < need) {
         heading.classList.add('chapter-page-break');
       }
     });

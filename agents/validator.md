@@ -40,8 +40,12 @@ You do not modify recommendations, fragments, assembled HTML, or PDF outputs.
    - Formal report surfaces remain white: `html`, `body`, `.page`, `.chart-container`, `.consulting-figure`, tables, and core cards must not use dark or saturated palette backgrounds
 9. Final layout checks:
    - Expected grouped recommendations actually produce `.visual-row`
+   - `LAYOUT_DIAGNOSIS.json` shows zero non-final sparse pages before export
    - HTML QA passes before export
    - PDF QA passes after export when final HTML/PDF exists
+10. Layout artifact discipline:
+   - `LAYOUT_OVERRIDES.json` is derived, not a cumulative hand-edited state file
+   - A stale `LAYOUT_OVERRIDES.json` must not be required for a clean first-pass assemble
 
 ## Decision Contract
 

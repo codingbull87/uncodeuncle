@@ -45,6 +45,7 @@ You must not generate chart fragments, assemble HTML, or export PDF.
 10. Do not set `color_confirmed: true` unless the user explicitly selected a palette or the orchestrator passed a confirmed palette.
 11. `DESIGN_BRIEF.json` must include `color_candidates` and `color_selected_by` (`user` or `orchestrator-confirmed`) when `color_confirmed` is true.
 12. Palette candidates must be white-base report palettes. Do not recommend dark-mode, web-theme, gradient, or large colored-background schemes for formal PDF reports.
+13. Persistent pagination intent belongs in `RECOMMENDATIONS.md/.json`, not in `LAYOUT_OVERRIDES.json`. Treat overrides as a derived artifact that can be regenerated or deleted on the next pipeline run.
 
 ## Forbidden Actions
 

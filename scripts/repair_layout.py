@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
-Generate/refresh LAYOUT_OVERRIDES.json based on LAYOUT_DIAGNOSIS.json.
+Generate a fresh LAYOUT_OVERRIDES.json from the current layout diagnosis.
+
+The file is treated as a derived artifact, not a cumulative state bag:
+- start from raw recommendations
+- apply the current override payload to understand the current effective state
+- apply bounded repair actions from diagnosis
+- diff effective recommendations back against the raw baseline
 
 Usage:
   python3 scripts/repair_layout.py <report_dir> [diagnosis_json] [output_json]
@@ -14,7 +20,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from assemble_engine import normalize_chart_id, parse_recommendations
+from assemble_engine import (
+    apply_layout_overrides,
+    normalize_chart_id,
+    normalize_layout,
+    normalize_size,
+    parse_recommendations,
+    parse_recommendations_base,
+    visual_type,
+)
 
 
 LOW_INFO_TYPES = {
@@ -34,27 +48,43 @@ LOW_INFO_TYPES = {
     "swimlane",
 }
 
+PATCH_FIELDS = {
+    "layout",
+    "size",
+    "page_role",
+    "keep_with_next",
+    "can_shrink",
+    "max_shrink_ratio",
+    "equal_height",
+    "row_align",
+    "print_compact",
+    "position",
+    "group",
+    "row_title",
+    "group_title",
+    "group_anchor",
+    "anchor",
+    "anchor_occurrence",
+}
+
 
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8", errors="ignore"))
 
 
-def rec_index(report_dir: Path) -> dict[str, dict[str, Any]]:
-    idx: dict[str, dict[str, Any]] = {}
-    for rec in parse_recommendations(str(report_dir)):
-        cid = normalize_chart_id(rec.get("id"))
-        if cid:
-            idx[cid] = rec
-    return idx
+def truthy(value: Any) -> bool:
+    return str(value).strip().lower() in {"true", "1", "yes", "on"}
 
 
-def merge_patch(target: dict[str, Any], patch: dict[str, Any]) -> int:
-    changed = 0
-    for key, value in patch.items():
-        if target.get(key) != value:
-            target[key] = value
-            changed += 1
-    return changed
+def compact_state(rec: dict[str, Any]) -> int:
+    score = 0
+    if normalize_layout(rec.get("layout")) == "compact":
+        score += 2
+    if normalize_size(rec.get("size")) in {"small", "compact"}:
+        score += 1
+    if truthy(rec.get("print_compact")):
+        score += 1
+    return score
 
 
 def normalize_targets(item: dict[str, Any]) -> list[str]:
@@ -69,52 +99,118 @@ def normalize_targets(item: dict[str, Any]) -> list[str]:
     return targets
 
 
-def build_overrides(report_dir: Path, diagnosis: dict[str, Any], existing: dict[str, Any]) -> tuple[dict[str, Any], int]:
-    recs = rec_index(report_dir)
-    payload = existing if isinstance(existing, dict) else {}
-    payload.setdefault("schema", "report-illustrator-layout-overrides:v1")
-    payload.setdefault("generated_by", "repair_layout.py")
-    payload.setdefault("by_chart_id", {})
-    payload.setdefault("by_group", {})
-    by_chart = payload["by_chart_id"]
+def current_effective_recommendations(report_dir: Path, current_payload: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_items = parse_recommendations_base(str(report_dir))
+    return apply_layout_overrides(raw_items, current_payload)
 
-    changed = 0
+
+def apply_compact_mutation(rec: dict[str, Any]) -> None:
+    try:
+        ratio = float(rec.get("max_shrink_ratio") or 0.0)
+    except (TypeError, ValueError):
+        ratio = 0.0
+    rec["can_shrink"] = True
+    rec["max_shrink_ratio"] = max(0.30, ratio)
+    rec["print_compact"] = True
+    rec["keep_with_next"] = False
+
+    size = normalize_size(rec.get("size"))
+    if size in {"large", "medium"}:
+        rec["size"] = "small"
+    elif size == "small":
+        rec["size"] = "compact"
+    else:
+        rec["size"] = "compact"
+
+    vtype = visual_type(rec)
+    if vtype in LOW_INFO_TYPES and compact_state(rec) >= 2 and normalize_layout(rec.get("layout")) == "full":
+        rec["layout"] = "compact"
+
+
+def apply_section_end_mutation(rec: dict[str, Any]) -> None:
+    rec["position"] = "section_end"
+    rec["keep_with_next"] = False
+    if visual_type(rec) in LOW_INFO_TYPES and compact_state(rec) < 2:
+        apply_compact_mutation(rec)
+
+
+def apply_split_row_mutation(rec: dict[str, Any]) -> None:
+    rec["group"] = ""
+    if normalize_layout(rec.get("layout")) in {"half", "third", "quarter"}:
+        rec["layout"] = "full"
+    if normalize_size(rec.get("size")) == "large":
+        rec["size"] = "medium"
+    rec["keep_with_next"] = False
+
+
+def rec_index(items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    idx: dict[str, dict[str, Any]] = {}
+    for rec in items:
+        cid = normalize_chart_id(rec.get("id"))
+        if cid:
+            idx[cid] = rec
+    return idx
+
+
+def apply_suggestions(effective_items: list[dict[str, Any]], diagnosis: dict[str, Any]) -> list[dict[str, Any]]:
+    index = rec_index(effective_items)
+    touched: list[str] = []
     for sparse in diagnosis.get("sparsePages", []):
         for suggestion in sparse.get("suggestions", []):
             action = str(suggestion.get("action", "")).strip()
             targets = normalize_targets(suggestion)
             for chart_id in targets:
-                patch: dict[str, Any] = {
-                    "can_shrink": True,
-                    "max_shrink_ratio": 0.30,
-                    "print_compact": True,
-                    "keep_with_next": False,
-                }
-                rec = recs.get(chart_id, {})
-                vtype = str(rec.get("type", "")).strip().lower()
-                layout = str(rec.get("layout", "full")).strip().lower()
-                size = str(rec.get("size", "medium")).strip().lower()
+                rec = index.get(chart_id)
+                if not rec:
+                    continue
+                if action in {"compact_trailing_visual", "compact_next_visual"}:
+                    apply_compact_mutation(rec)
+                elif action == "move_trailing_visual_to_section_end":
+                    apply_section_end_mutation(rec)
+                elif action == "split_trailing_row":
+                    apply_split_row_mutation(rec)
+                else:
+                    continue
+                touched.append(f"{action}:{chart_id}")
+    diagnosis["appliedActions"] = touched
+    return effective_items
 
-                if action in {"compact_trailing", "compact_next", "tighten_trailing"}:
-                    if size in {"medium", "large"}:
-                        patch["size"] = "small"
-                    elif size == "small":
-                        patch["size"] = "compact"
 
-                if action == "tighten_trailing" and vtype in LOW_INFO_TYPES and layout == "full":
-                    patch["layout"] = "compact"
+def build_payload(raw_items: list[dict[str, Any]], effective_items: list[dict[str, Any]], diagnosis: dict[str, Any]) -> tuple[dict[str, Any], int]:
+    raw_index = rec_index(raw_items)
+    effective_index = rec_index(effective_items)
+    by_chart: dict[str, dict[str, Any]] = {}
+    changes = 0
 
-                slot = by_chart.setdefault(chart_id, {})
-                changed += merge_patch(slot, patch)
+    for chart_id, raw_rec in raw_index.items():
+        effective = effective_index.get(chart_id)
+        if not effective:
+            continue
+        patch: dict[str, Any] = {}
+        for field in PATCH_FIELDS:
+            if raw_rec.get(field) != effective.get(field):
+                patch[field] = effective.get(field)
+        if patch:
+            by_chart[chart_id] = patch
+            changes += len(patch)
 
-    payload["last_sparse_pages"] = [
-        {"page": item.get("page"), "blankRatio": item.get("blankRatio")} for item in diagnosis.get("sparsePages", [])
-    ]
-    return payload, changed
+    payload = {
+        "schema": "report-illustrator-layout-overrides:v2",
+        "generated_by": "repair_layout.py",
+        "derived": True,
+        "by_chart_id": by_chart,
+        "by_group": {},
+        "last_sparse_pages": [
+            {"page": item.get("page"), "blankRatio": item.get("blankRatio")}
+            for item in diagnosis.get("sparsePages", [])
+        ],
+        "applied_actions": diagnosis.get("appliedActions", []),
+    }
+    return payload, changes
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description="Build layout overrides from diagnosis JSON")
+    parser = argparse.ArgumentParser(description="Build fresh layout overrides from diagnosis JSON")
     parser.add_argument("report_dir", help="Report workspace directory")
     parser.add_argument("diagnosis_json", nargs="?", help="Optional diagnosis JSON path")
     parser.add_argument("output_json", nargs="?", help="Optional output overrides JSON path")
@@ -133,8 +229,12 @@ def main(argv: list[str]) -> int:
         return 1
 
     diagnosis = read_json(diagnosis_path)
-    existing = read_json(output_path) if output_path.exists() else {}
-    payload, changed = build_overrides(report_dir, diagnosis, existing)
+    current_payload = read_json(output_path) if output_path.exists() else {}
+
+    raw_items = parse_recommendations_base(str(report_dir))
+    effective_items = current_effective_recommendations(report_dir, current_payload if isinstance(current_payload, dict) else {})
+    effective_items = apply_suggestions(effective_items, diagnosis)
+    payload, changed = build_payload(raw_items, effective_items, diagnosis)
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     print(f"[LAYOUT_REPAIR] diagnosis={diagnosis_path}")

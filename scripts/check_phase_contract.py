@@ -193,6 +193,17 @@ def check_before_export(report_dir: Path) -> tuple[list[str], list[str]]:
     html_errors, html_warnings, _ = run_qa(report_dir, html_path)
     errors.extend("HTML QA 不合格：" + item for item in html_errors)
     warnings.extend("HTML QA 告警：" + item for item in html_warnings)
+
+    layout_diag = report_dir / "LAYOUT_DIAGNOSIS.json"
+    if layout_diag.exists():
+        try:
+            payload = json.loads(layout_diag.read_text(encoding="utf-8", errors="ignore"))
+        except json.JSONDecodeError as exc:
+            errors.append(f"LAYOUT_DIAGNOSIS.json 解析失败：{exc}")
+        else:
+            sparse = payload.get("sparsePages", [])
+            if isinstance(sparse, list) and sparse:
+                errors.append(f"LAYOUT_DIAGNOSIS.json 仍有 {len(sparse)} 个稀疏页，禁止进入 Phase 8")
     return errors, warnings
 
 
