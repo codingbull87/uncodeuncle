@@ -1,10 +1,13 @@
 # CSS split plan
 
-`assemble.py` now supports loading ordered `*.css` files from this directory.
+`assemble.py` loads ordered `*.css` files from this directory first.
 
-Keep `templates/static/base-styles.css` as the compatibility bundle until the
-page-layout rules settle. When the component protocol and print planner are
-stable, split the bundle in this order:
+`templates/static/base-styles.css` is now a compatibility snapshot.
+Split CSS files are the source of truth. Rebuild the snapshot with:
+
+`python3 scripts/build_base_styles.py`
+
+Keep the split order stable:
 
 1. `00-tokens.css`
 2. `10-document.css`

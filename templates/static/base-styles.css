@@ -1,3 +1,9 @@
+/*
+ * Compatibility snapshot generated from templates/static/css/*.css
+ * Source of truth: split CSS files in templates/static/css/
+ */
+
+/* >>> templates/static/css/00-tokens.css */
 :root {
   --ink: #25303b;
   --ink-strong: #111827;
@@ -19,6 +25,7 @@
   --shadow: 0 2px 16px rgba(15, 76, 70, 0.12);
 }
 
+/* >>> templates/static/css/10-document.css */
 * {
   box-sizing: border-box;
 }
@@ -223,227 +230,27 @@ th:first-child {
   color: var(--blue);
   font-weight: 800;
 }
-
-.visual-block,
-.visual-row,
-.chart-container,
-.consulting-figure,
-.kpi-block,
-.kpi-strip,
-.insight-grid,
-.matrix-2x2,
-.risk-matrix,
-.timeline,
-.value-chain,
-.driver-tree,
-.swimlane-roadmap,
-.range-band,
-.football-field,
-.heatmap-grid,
-.decision-tree,
-.scorecard-grid {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
-.visual-block {
-  margin: 22px 0 26px;
-}
-
-.visual-block-nested {
-  margin: 0;
-}
-
-.visual-size-small .chart-container,
-.visual-size-small .consulting-figure {
-  padding: 15px 17px;
-}
-
-.visual-size-large {
-  margin-top: 26px;
-  margin-bottom: 30px;
-}
-
-.visual-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin: 22px 0 26px;
-  align-items: start;
-}
-
-.visual-row-third {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.visual-row-quarter {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.visual-row-title {
-  grid-column: 1 / -1;
+#pdf-export-btn {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 9999;
+  border: 0;
+  border-radius: 6px;
+  background: var(--brand);
+  color: #fff;
+  padding: 11px 20px;
   font-size: 13px;
   font-weight: 800;
-  color: var(--brand-dark);
-  padding: 0 2px;
-  margin-bottom: -2px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.28);
 }
 
-.visual-row .visual-block {
-  min-width: 0;
-  align-self: start;
+#pdf-export-btn:hover {
+  background: var(--brand-dark);
 }
 
-.visual-row .chart-container,
-.visual-row .consulting-figure,
-.visual-row .kpi-block {
-  height: auto;
-}
-
-.visual-row-equal {
-  align-items: stretch;
-  --visual-header-min: 48px;
-  --visual-note-min: 24px;
-  --visual-body-min: 168px;
-  --visual-footer-min: 0px;
-}
-
-.visual-row-equal .visual-block {
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.visual-row-equal .chart-container,
-.visual-row-equal .consulting-figure {
-  flex: 1 1 auto;
-  height: auto;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.visual-row-equal .visual-block > .chart-container,
-.visual-row-equal .visual-block > .consulting-figure {
-  width: 100%;
-  flex: 1 1 auto;
-}
-
-.visual-row-equal .chart-header,
-.visual-row-equal .figure-header {
-  min-height: var(--visual-header-min);
-  flex: 0 0 auto;
-}
-
-.visual-row-equal .chart-annotation,
-.visual-row-equal .figure-note {
-  min-height: var(--visual-note-min);
-  flex: 0 0 auto;
-}
-
-.visual-row-equal .chart-container:not(:has(.chart-annotation)) .chart-header,
-.visual-row-equal .consulting-figure:not(:has(.figure-note)) .figure-header {
-  margin-bottom: calc(12px + var(--visual-note-min));
-}
-
-.visual-row-equal .visual-size-small .chart-container,
-.visual-row-equal .visual-size-small .consulting-figure {
-  padding: 14px 16px;
-}
-
-.visual-row-equal .visual-size-small .consulting-figure,
-.visual-row-equal .visual-size-small .chart-container {
-  --equal-visual-body-height: var(--visual-body-min);
-  min-height: 0;
-  overflow: visible !important;
-}
-
-.visual-row-equal .visual-size-small .chart-title,
-.visual-row-equal .visual-size-small .figure-title {
-  font-size: 13px;
-  line-height: 1.42;
-}
-
-.visual-row-equal .visual-size-small .chart-annotation,
-.visual-row-equal .visual-size-small .figure-note {
-  font-size: 11.5px;
-  margin-bottom: 6px;
-}
-
-.visual-row-equal .visual-size-small .chart-container [id^="chart-C"] {
-  flex: 1 1 var(--equal-visual-body-height);
-  min-height: 120px;
-  height: var(--equal-visual-body-height) !important;
-}
-
-.visual-row-equal .visual-size-small .consulting-figure table {
-  flex: 1 0 auto;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.visual-row-equal .visual-size-small .kpi-block,
-.visual-row-equal .visual-size-small .insight-grid,
-.visual-row-equal .visual-size-small .framework-grid,
-.visual-row-equal .visual-size-small .scorecard-grid,
-.visual-row-equal .visual-size-small .matrix-2x2,
-.visual-row-equal .visual-size-small .risk-matrix,
-.visual-row-equal .visual-size-small .heatmap-grid,
-.visual-row-equal .visual-size-small .value-chain,
-.visual-row-equal .visual-size-small .process-chain,
-.visual-row-equal .visual-size-small .driver-tree,
-.visual-row-equal .visual-size-small .range-band,
-.visual-row-equal .visual-size-small .football-field,
-.visual-row-equal .visual-size-small .swimlane-roadmap,
-.visual-row-equal .visual-size-small .decision-tree,
-.visual-row-equal .visual-size-small table {
-  min-height: var(--equal-visual-body-height);
-}
-
-.visual-row-equal .visual-size-small .kpi-block {
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: 5px;
-  height: var(--equal-visual-body-height);
-  align-content: stretch;
-  align-items: start;
-  grid-auto-rows: minmax(0, 1fr);
-  margin-bottom: 0;
-}
-
-.visual-row-equal .visual-size-small .kpi-card {
-  padding: 6px 8px;
-  min-height: 0;
-}
-
-.visual-row-equal .visual-size-small .kpi-block .kpi-card:nth-child(3):last-child {
-  grid-column: 1 / -1;
-}
-
-.visual-row-equal .visual-size-small .kpi-label {
-  font-size: 9.5px;
-  margin-bottom: 2px;
-}
-
-.visual-row-equal .visual-size-small .kpi-val {
-  font-size: 17px;
-  line-height: 1.12;
-}
-
-.visual-row-equal .visual-size-small .kpi-sub {
-  font-size: 9.5px;
-  margin-top: 1px;
-  line-height: 1.2;
-}
-
-.visual-row-equal .visual-size-small .chart-src,
-.visual-row-equal .visual-size-small .figure-src,
-.visual-row-equal .visual-size-small .component-src {
-  margin-top: auto;
-  padding-top: 8px;
-  min-height: var(--visual-footer-min);
-}
-
+/* >>> templates/static/css/20-components.css */
 .chart-container,
 .consulting-figure {
   background: #fff;
@@ -983,26 +790,228 @@ th:first-child {
   font-weight: 800;
 }
 
-#pdf-export-btn {
-  position: fixed;
-  right: 28px;
-  bottom: 28px;
-  z-index: 9999;
-  border: 0;
-  border-radius: 6px;
-  background: var(--brand);
-  color: #fff;
-  padding: 11px 20px;
+/* >>> templates/static/css/30-visual-rows.css */
+.visual-block,
+.visual-row,
+.chart-container,
+.consulting-figure,
+.kpi-block,
+.kpi-strip,
+.insight-grid,
+.matrix-2x2,
+.risk-matrix,
+.timeline,
+.value-chain,
+.driver-tree,
+.swimlane-roadmap,
+.range-band,
+.football-field,
+.heatmap-grid,
+.decision-tree,
+.scorecard-grid {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.visual-block {
+  margin: 22px 0 26px;
+}
+
+.visual-block-nested {
+  margin: 0;
+}
+
+.visual-size-small .chart-container,
+.visual-size-small .consulting-figure {
+  padding: 15px 17px;
+}
+
+.visual-size-large {
+  margin-top: 26px;
+  margin-bottom: 30px;
+}
+
+.visual-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0 26px;
+  align-items: start;
+}
+
+.visual-row-third {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.visual-row-quarter {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.visual-row-title {
+  grid-column: 1 / -1;
   font-size: 13px;
   font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.28);
+  color: var(--brand-dark);
+  padding: 0 2px;
+  margin-bottom: -2px;
 }
 
-#pdf-export-btn:hover {
-  background: var(--brand-dark);
+.visual-row .visual-block {
+  min-width: 0;
+  align-self: start;
 }
 
+.visual-row .chart-container,
+.visual-row .consulting-figure,
+.visual-row .kpi-block {
+  height: auto;
+}
+
+.visual-row-equal {
+  align-items: stretch;
+  --visual-header-min: 48px;
+  --visual-note-min: 24px;
+  --visual-body-min: 168px;
+  --visual-footer-min: 0px;
+}
+
+.visual-row-equal .visual-block {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.visual-row-equal .chart-container,
+.visual-row-equal .consulting-figure {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.visual-row-equal .visual-block > .chart-container,
+.visual-row-equal .visual-block > .consulting-figure {
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.visual-row-equal .chart-header,
+.visual-row-equal .figure-header {
+  min-height: var(--visual-header-min);
+  flex: 0 0 auto;
+}
+
+.visual-row-equal .chart-annotation,
+.visual-row-equal .figure-note {
+  min-height: var(--visual-note-min);
+  flex: 0 0 auto;
+}
+
+.visual-row-equal .chart-container:not(:has(.chart-annotation)) .chart-header,
+.visual-row-equal .consulting-figure:not(:has(.figure-note)) .figure-header {
+  margin-bottom: calc(12px + var(--visual-note-min));
+}
+
+.visual-row-equal .visual-size-small .chart-container,
+.visual-row-equal .visual-size-small .consulting-figure {
+  padding: 14px 16px;
+}
+
+.visual-row-equal .visual-size-small .consulting-figure,
+.visual-row-equal .visual-size-small .chart-container {
+  --equal-visual-body-height: var(--visual-body-min);
+  min-height: 0;
+  overflow: visible !important;
+}
+
+.visual-row-equal .visual-size-small .chart-title,
+.visual-row-equal .visual-size-small .figure-title {
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.visual-row-equal .visual-size-small .chart-annotation,
+.visual-row-equal .visual-size-small .figure-note {
+  font-size: 11.5px;
+  margin-bottom: 6px;
+}
+
+.visual-row-equal .visual-size-small .chart-container [id^="chart-C"] {
+  flex: 1 1 var(--equal-visual-body-height);
+  min-height: 120px;
+  height: var(--equal-visual-body-height) !important;
+}
+
+.visual-row-equal .visual-size-small .consulting-figure table {
+  flex: 1 0 auto;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.visual-row-equal .visual-size-small .kpi-block,
+.visual-row-equal .visual-size-small .insight-grid,
+.visual-row-equal .visual-size-small .framework-grid,
+.visual-row-equal .visual-size-small .scorecard-grid,
+.visual-row-equal .visual-size-small .matrix-2x2,
+.visual-row-equal .visual-size-small .risk-matrix,
+.visual-row-equal .visual-size-small .heatmap-grid,
+.visual-row-equal .visual-size-small .value-chain,
+.visual-row-equal .visual-size-small .process-chain,
+.visual-row-equal .visual-size-small .driver-tree,
+.visual-row-equal .visual-size-small .range-band,
+.visual-row-equal .visual-size-small .football-field,
+.visual-row-equal .visual-size-small .swimlane-roadmap,
+.visual-row-equal .visual-size-small .decision-tree,
+.visual-row-equal .visual-size-small table {
+  min-height: var(--equal-visual-body-height);
+}
+
+.visual-row-equal .visual-size-small .kpi-block {
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 5px;
+  height: var(--equal-visual-body-height);
+  align-content: stretch;
+  align-items: start;
+  grid-auto-rows: minmax(0, 1fr);
+  margin-bottom: 0;
+}
+
+.visual-row-equal .visual-size-small .kpi-card {
+  padding: 6px 8px;
+  min-height: 0;
+}
+
+.visual-row-equal .visual-size-small .kpi-block .kpi-card:nth-child(3):last-child {
+  grid-column: 1 / -1;
+}
+
+.visual-row-equal .visual-size-small .kpi-label {
+  font-size: 9.5px;
+  margin-bottom: 2px;
+}
+
+.visual-row-equal .visual-size-small .kpi-val {
+  font-size: 17px;
+  line-height: 1.12;
+}
+
+.visual-row-equal .visual-size-small .kpi-sub {
+  font-size: 9.5px;
+  margin-top: 1px;
+  line-height: 1.2;
+}
+
+.visual-row-equal .visual-size-small .chart-src,
+.visual-row-equal .visual-size-small .figure-src,
+.visual-row-equal .visual-size-small .component-src {
+  margin-top: auto;
+  padding-top: 8px;
+  min-height: var(--visual-footer-min);
+}
+
+/* >>> templates/static/css/40-print.css */
 @page {
   size: A4;
   margin: 16mm 17mm 18mm;
