@@ -914,37 +914,47 @@ def inject_charts_into_content(
 # ─── 配色系统 ───────────────────────────────────────────────────────────────
 
 PALETTE_MAP: dict[str, str] = {
-    "consulting-classic": "Consulting Classic",
-    "institutional-carbon": "Institutional Carbon",
-    "banker-monochrome": "Banker Monochrome",
-    "financial-blue": "Financial Blue",
-    "burgundy-editorial": "Burgundy Editorial",
+    "green": "Green",
+    "warm": "Warm",
+    "wine": "Wine",
+    "black": "Black",
+    "blue": "Blue",
     # Backward-compatible aliases for reports produced by older skill versions.
-    "consulting-navy": "Consulting Classic",
-    "institutional-blue": "Institutional Carbon",
-    "corporate-neutral": "Financial Blue",
-    "financial-trust": "Financial Blue",
-    "boardroom-green": "Financial Blue",
-    "monochrome-executive": "Banker Monochrome",
-    "mckinsey-blue": "Consulting Classic",
-    "modern-slate": "Institutional Carbon",
-    "warm-clay": "Burgundy Editorial",
-    "forest-green": "Financial Blue",
-    "minimal-light": "Banker Monochrome",
+    "consulting-classic": "Green",
+    "institutional-carbon": "Blue",
+    "banker-monochrome": "Black",
+    "financial-blue": "Blue",
+    "burgundy-editorial": "Wine",
+    "consulting-navy": "Green",
+    "institutional-blue": "Blue",
+    "corporate-neutral": "Blue",
+    "financial-trust": "Blue",
+    "boardroom-green": "Green",
+    "monochrome-executive": "Black",
+    "mckinsey-blue": "Green",
+    "modern-slate": "Blue",
+    "warm-clay": "Warm",
+    "forest-green": "Green",
+    "minimal-light": "Black",
 }
 
 PALETTE_ALIASES: dict[str, str] = {
-    "consulting-navy": "consulting-classic",
-    "institutional-blue": "institutional-carbon",
-    "corporate-neutral": "financial-blue",
-    "financial-trust": "financial-blue",
-    "boardroom-green": "financial-blue",
-    "monochrome-executive": "banker-monochrome",
-    "mckinsey-blue": "consulting-classic",
-    "modern-slate": "institutional-carbon",
-    "warm-clay": "burgundy-editorial",
-    "forest-green": "financial-blue",
-    "minimal-light": "banker-monochrome",
+    "consulting-classic": "green",
+    "institutional-carbon": "blue",
+    "banker-monochrome": "black",
+    "financial-blue": "blue",
+    "burgundy-editorial": "wine",
+    "consulting-navy": "green",
+    "institutional-blue": "blue",
+    "corporate-neutral": "blue",
+    "financial-trust": "blue",
+    "boardroom-green": "green",
+    "monochrome-executive": "black",
+    "mckinsey-blue": "green",
+    "modern-slate": "blue",
+    "warm-clay": "warm",
+    "forest-green": "green",
+    "minimal-light": "black",
 }
 
 
@@ -961,13 +971,13 @@ def load_color_palette(skill_dir: str, color_scheme: str) -> str:
 
     # 调色板标题关键字（用于唯一定位章节）
     scheme_keys = {
-        "consulting-classic": "A. Consulting Classic",
-        "institutional-carbon": "B. Institutional Carbon",
-        "banker-monochrome": "C. Banker Monochrome",
-        "financial-blue": "D. Financial Blue",
-        "burgundy-editorial": "E. Burgundy Editorial",
+        "green": "A. Green",
+        "warm": "B. Warm",
+        "wine": "C. Wine",
+        "black": "D. Black",
+        "blue": "E. Blue",
     }
-    target = scheme_keys.get(normalized_scheme, "A. Consulting Classic")
+    target = scheme_keys.get(normalized_scheme, "A. Green")
 
     # 匹配 "## {id}. {name} — ..." 到下一个 palette 标题之间的内容。
     pattern = re.compile(
@@ -1006,7 +1016,7 @@ def load_color_scheme_css(skill_dir: str, report_dir: str) -> str:
         print(f"[WARN] 读取 DESIGN_BRIEF.json 失败：{e}，使用默认配色")
         return ""
 
-    color_scheme = brief.get("color_scheme", "consulting-classic")
+    color_scheme = brief.get("color_scheme", "green")
     print(f"[INFO] 配色方案：{color_scheme}")
     palette_css = load_color_palette(skill_dir, color_scheme)
     return palette_css + build_legacy_token_bridge(color_scheme)

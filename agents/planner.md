@@ -36,11 +36,11 @@ You must not generate chart fragments, assemble HTML, or export PDF.
    - Grouped rows must share the same `anchor`/`position`, or explicitly share `group_anchor` / `row_anchor`.
 7. Ensure titles are conclusion-first statements, not generic labels.
 8. `DESIGN_BRIEF.json` must contain a valid formal report `color_scheme`:
-   - `consulting-classic`
-   - `institutional-carbon`
-   - `banker-monochrome`
-   - `financial-blue`
-   - `burgundy-editorial`
+   - `green`
+   - `warm`
+   - `wine`
+   - `black`
+   - `blue`
 9. Phase 2 must present at least 3 palette candidates to the user before finalizing.
 10. Do not set `color_confirmed: true` unless the user explicitly selected a palette or the orchestrator passed a confirmed palette.
 11. `DESIGN_BRIEF.json` must include `color_candidates` and `color_selected_by` (`user` or `orchestrator-confirmed`) when `color_confirmed` is true.

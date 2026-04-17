@@ -6,11 +6,11 @@
 
 | 代号 | `color_scheme` | 名称 | 风格定位 | 适用场景 |
 |------|----------------|------|----------|----------|
-| **A** | `consulting-classic` | Consulting Classic | 深蓝+深金，咨询交付密度 | 战略研究、投资判断、咨询交付 |
-| **B** | `institutional-carbon` | Institutional Carbon | 企业蓝+冷灰，系统化 | 科技平台、机构汇报、管理层材料 |
-| **C** | `banker-monochrome` | Banker Monochrome | 黑灰+少量蓝，投行 memo | 董事会摘要、文字密集、财务页 |
-| **D** | `financial-blue` | Financial Blue | 信任蓝+语义红绿，金融分析 | 订阅、ARPU、收入模型、估值框架 |
-| **E** | `burgundy-editorial` | Burgundy Editorial | 酒红+炭黑+暗金，编辑化正式风 | 消费品牌、战略评论、高层叙事页 |
+| **A** | `green` | Green | 麦肯锡系深绿主轴，咨询交付密度 | 战略研究、投资判断、咨询交付 |
+| **B** | `warm` | Warm | 暖中性叙事风，正文阅读友好 | 长文研究、管理层叙事、结论解释 |
+| **C** | `wine` | Wine | 酒红+炭黑，观点表达更鲜明 | 高层点评、品牌战略、竞争判断 |
+| **D** | `black` | Black | 黑灰主轴，最克制的执行风 | 董事会摘要、财务页、文字密集页 |
+| **E** | `blue` | Blue | 机构蓝+冷灰，系统化商务风 | 企业级/平台级/机构汇报 |
 
 ## 白底硬约束
 
@@ -22,189 +22,39 @@
 
 禁止把 `.page`、正文区、图表容器改成深色或高饱和底色。
 
-## A. Consulting Classic — 深蓝咨询风
+## A. Green — McKinsey Green
 
 ```css
 :root {
   --report-bg: #ffffff;
   --report-surface: #ffffff;
-  --report-subtle: #f7f8fa;
-  --report-subtle-2: #eef2f7;
+  --report-subtle: #f5f8f7;
+  --report-subtle-2: #e8efec;
 
-  --text-primary: #1a202c;
-  --text-secondary: #4a5568;
-  --text-muted: #718096;
-  --border-subtle: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --text-primary: #1a2020;
+  --text-secondary: #3f4d4b;
+  --text-muted: #6a7573;
+  --border-subtle: #d8e1de;
+  --border-strong: #c2d1cd;
 
-  --accent-primary: #1f4e79;
-  --accent-secondary: #0070d1;
-  --accent-tertiary: #b8860b;
-  --accent-soft: #ebf0f7;
-  --accent-strong: #17365d;
-
-  --semantic-positive: #276749;
-  --semantic-negative: #c53030;
-  --semantic-warning: #b7791f;
-  --semantic-info: #2b6cb0;
-
-  --chart-1: #1f4e79;
-  --chart-2: #0070d1;
-  --chart-3: #718096;
-  --chart-4: #b8860b;
-  --chart-5: #276749;
-  --chart-6: #c53030;
-  --echarts-palette: #1f4e79, #0070d1, #718096, #b8860b, #276749, #c53030;
-
-  --style-title-rule-width: 3px;
-  --style-section-accent-width: 4px;
-  --style-card-radius: 6px;
-  --style-kpi-accent-width: 4px;
-  --style-panel-top-accent-width: 3px;
-  --style-header-fill: var(--report-subtle-2);
-  --style-table-stripe-fill: var(--report-subtle);
-  --style-risk-high-bg: #fff1ef;
-  --style-risk-mid-bg: #fff8e8;
-  --style-risk-low-bg: #eefaf4;
-  --style-risk-high-border: #f4b4aa;
-  --style-risk-mid-border: #f7d28a;
-  --style-risk-low-border: #a8dbc6;
-}
-```
-
-## B. Institutional Carbon — 企业系统风
-
-```css
-:root {
-  --report-bg: #ffffff;
-  --report-surface: #ffffff;
-  --report-subtle: #f4f7fb;
-  --report-subtle-2: #e9eff8;
-
-  --text-primary: #161616;
-  --text-secondary: #3f4b5a;
-  --text-muted: #6b7280;
-  --border-subtle: #dce3ec;
-  --border-strong: #c8d3e1;
-
-  --accent-primary: #0f62fe;
-  --accent-secondary: #3b82f6;
+  --accent-primary: #005b4f;
+  --accent-secondary: #0f766e;
   --accent-tertiary: #8a6d3b;
-  --accent-soft: #edf5ff;
-  --accent-strong: #003a8c;
+  --accent-soft: #e8f2ef;
+  --accent-strong: #00443b;
 
-  --semantic-positive: #198038;
-  --semantic-negative: #da1e28;
-  --semantic-warning: #b28600;
-  --semantic-info: #0043ce;
-
-  --chart-1: #0f62fe;
-  --chart-2: #4589ff;
-  --chart-3: #6b7280;
-  --chart-4: #8a6d3b;
-  --chart-5: #198038;
-  --chart-6: #da1e28;
-  --echarts-palette: #0f62fe, #4589ff, #6b7280, #8a6d3b, #198038, #da1e28;
-
-  --style-title-rule-width: 2px;
-  --style-section-accent-width: 3px;
-  --style-card-radius: 8px;
-  --style-kpi-accent-width: 3px;
-  --style-panel-top-accent-width: 2px;
-  --style-header-fill: var(--report-subtle-2);
-  --style-table-stripe-fill: #f9fbff;
-  --style-risk-high-bg: #fff3f4;
-  --style-risk-mid-bg: #fff9ef;
-  --style-risk-low-bg: #eef8f1;
-  --style-risk-high-border: #f2bcc0;
-  --style-risk-mid-border: #e9d6ab;
-  --style-risk-low-border: #bedbc8;
-}
-```
-
-## C. Banker Monochrome — 投行黑灰风
-
-```css
-:root {
-  --report-bg: #ffffff;
-  --report-surface: #ffffff;
-  --report-subtle: #f6f6f7;
-  --report-subtle-2: #ececee;
-
-  --text-primary: #111111;
-  --text-secondary: #2f3136;
-  --text-muted: #61656f;
-  --border-subtle: #d8dbe1;
-  --border-strong: #c5c8cf;
-
-  --accent-primary: #18181b;
-  --accent-secondary: #3b82f6;
-  --accent-tertiary: #7b674a;
-  --accent-soft: #f1f2f4;
-  --accent-strong: #09090b;
-
-  --semantic-positive: #1f6a43;
-  --semantic-negative: #9f1f24;
-  --semantic-warning: #8a6f1d;
-  --semantic-info: #2f5fb3;
-
-  --chart-1: #18181b;
-  --chart-2: #52525b;
-  --chart-3: #8e8e97;
-  --chart-4: #3b82f6;
-  --chart-5: #1f6a43;
-  --chart-6: #9f1f24;
-  --echarts-palette: #18181b, #52525b, #8e8e97, #3b82f6, #1f6a43, #9f1f24;
-
-  --style-title-rule-width: 2px;
-  --style-section-accent-width: 3px;
-  --style-card-radius: 4px;
-  --style-kpi-accent-width: 3px;
-  --style-panel-top-accent-width: 2px;
-  --style-header-fill: var(--report-subtle-2);
-  --style-table-stripe-fill: #f8f8f9;
-  --style-risk-high-bg: #faf2f2;
-  --style-risk-mid-bg: #faf8f1;
-  --style-risk-low-bg: #f0f5f2;
-  --style-risk-high-border: #dfc0c1;
-  --style-risk-mid-border: #dfd1af;
-  --style-risk-low-border: #c3d6c9;
-}
-```
-
-## D. Financial Blue — 金融信任风
-
-```css
-:root {
-  --report-bg: #ffffff;
-  --report-surface: #ffffff;
-  --report-subtle: #f6f8fb;
-  --report-subtle-2: #eaf1fb;
-
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #6b7280;
-  --border-subtle: #dbe4f0;
-  --border-strong: #c7d2df;
-
-  --accent-primary: #0052cc;
-  --accent-secondary: #2f80ed;
-  --accent-tertiary: #9a6700;
-  --accent-soft: #edf4ff;
-  --accent-strong: #003a8c;
-
-  --semantic-positive: #0f7a4f;
+  --semantic-positive: #1f7a53;
   --semantic-negative: #b42318;
-  --semantic-warning: #b45309;
-  --semantic-info: #0052cc;
+  --semantic-warning: #a16207;
+  --semantic-info: #0f766e;
 
-  --chart-1: #0052cc;
-  --chart-2: #2f80ed;
-  --chart-3: #475569;
-  --chart-4: #9a6700;
-  --chart-5: #0f7a4f;
+  --chart-1: #005b4f;
+  --chart-2: #0f766e;
+  --chart-3: #334155;
+  --chart-4: #8a6d3b;
+  --chart-5: #1f7a53;
   --chart-6: #b42318;
-  --echarts-palette: #0052cc, #2f80ed, #475569, #9a6700, #0f7a4f, #b42318;
+  --echarts-palette: #005b4f, #0f766e, #334155, #8a6d3b, #1f7a53, #b42318;
 
   --style-title-rule-width: 3px;
   --style-section-accent-width: 4px;
@@ -212,17 +62,67 @@
   --style-kpi-accent-width: 4px;
   --style-panel-top-accent-width: 3px;
   --style-header-fill: var(--report-subtle-2);
-  --style-table-stripe-fill: #f8fbff;
+  --style-table-stripe-fill: #f8fbfa;
   --style-risk-high-bg: #fff2f0;
-  --style-risk-mid-bg: #fff7e7;
+  --style-risk-mid-bg: #fff9ec;
   --style-risk-low-bg: #eef8f2;
-  --style-risk-high-border: #efb8b0;
-  --style-risk-mid-border: #e9cf96;
-  --style-risk-low-border: #b7dbc9;
+  --style-risk-high-border: #efbeb8;
+  --style-risk-mid-border: #e7d6ab;
+  --style-risk-low-border: #b8dbc9;
 }
 ```
 
-## E. Burgundy Editorial — 酒红编辑风
+## B. Warm — Editorial Warm
+
+```css
+:root {
+  --report-bg: #ffffff;
+  --report-surface: #ffffff;
+  --report-subtle: #f8f6f1;
+  --report-subtle-2: #f1eee6;
+
+  --text-primary: #2f2d2a;
+  --text-secondary: #5e5d59;
+  --text-muted: #87867f;
+  --border-subtle: #e6e1d7;
+  --border-strong: #d7d0c2;
+
+  --accent-primary: #c96442;
+  --accent-secondary: #d97757;
+  --accent-tertiary: #6f7c5e;
+  --accent-soft: #f8ede8;
+  --accent-strong: #a24f34;
+
+  --semantic-positive: #3f6d4e;
+  --semantic-negative: #b53333;
+  --semantic-warning: #9c6f2f;
+  --semantic-info: #88513f;
+
+  --chart-1: #c96442;
+  --chart-2: #d97757;
+  --chart-3: #5e5d59;
+  --chart-4: #6f7c5e;
+  --chart-5: #3f6d4e;
+  --chart-6: #b53333;
+  --echarts-palette: #c96442, #d97757, #5e5d59, #6f7c5e, #3f6d4e, #b53333;
+
+  --style-title-rule-width: 3px;
+  --style-section-accent-width: 4px;
+  --style-card-radius: 8px;
+  --style-kpi-accent-width: 4px;
+  --style-panel-top-accent-width: 3px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: #fbf9f4;
+  --style-risk-high-bg: #fff3f1;
+  --style-risk-mid-bg: #fff8ee;
+  --style-risk-low-bg: #f1f8f1;
+  --style-risk-high-border: #efc3bb;
+  --style-risk-mid-border: #e8d4ad;
+  --style-risk-low-border: #c1d8c6;
+}
+```
+
+## C. Wine — Burgundy Strategy
 
 ```css
 :root {
@@ -238,7 +138,7 @@
   --border-strong: #d7c8cd;
 
   --accent-primary: #7a1f3d;
-  --accent-secondary: #b23a5f;
+  --accent-secondary: #a63257;
   --accent-tertiary: #8d6b2f;
   --accent-soft: #f6ecef;
   --accent-strong: #5a122a;
@@ -249,12 +149,12 @@
   --semantic-info: #8f2f4f;
 
   --chart-1: #7a1f3d;
-  --chart-2: #b23a5f;
-  --chart-3: #756a6f;
+  --chart-2: #a63257;
+  --chart-3: #5a122a;
   --chart-4: #8d6b2f;
   --chart-5: #2a6a50;
   --chart-6: #a12433;
-  --echarts-palette: #7a1f3d, #b23a5f, #756a6f, #8d6b2f, #2a6a50, #a12433;
+  --echarts-palette: #7a1f3d, #a63257, #5a122a, #8d6b2f, #2a6a50, #a12433;
 
   --style-title-rule-width: 3px;
   --style-section-accent-width: 4px;
@@ -272,21 +172,126 @@
 }
 ```
 
+## D. Black — Executive Mono
+
+```css
+:root {
+  --report-bg: #ffffff;
+  --report-surface: #ffffff;
+  --report-subtle: #f7f7f7;
+  --report-subtle-2: #ededed;
+
+  --text-primary: #111111;
+  --text-secondary: #2f3136;
+  --text-muted: #707072;
+  --border-subtle: #d6d9de;
+  --border-strong: #c6cacf;
+
+  --accent-primary: #111111;
+  --accent-secondary: #1151ff;
+  --accent-tertiary: #4b4b4d;
+  --accent-soft: #f1f1f1;
+  --accent-strong: #000000;
+
+  --semantic-positive: #007d48;
+  --semantic-negative: #d30005;
+  --semantic-warning: #9f5f00;
+  --semantic-info: #1151ff;
+
+  --chart-1: #111111;
+  --chart-2: #4b4b4d;
+  --chart-3: #9e9ea0;
+  --chart-4: #1151ff;
+  --chart-5: #007d48;
+  --chart-6: #d30005;
+  --echarts-palette: #111111, #4b4b4d, #9e9ea0, #1151ff, #007d48, #d30005;
+
+  --style-title-rule-width: 4px;
+  --style-section-accent-width: 5px;
+  --style-card-radius: 4px;
+  --style-kpi-accent-width: 5px;
+  --style-panel-top-accent-width: 4px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: #fafafa;
+  --style-risk-high-bg: #fff1f1;
+  --style-risk-mid-bg: #fff8ea;
+  --style-risk-low-bg: #eef8f2;
+  --style-risk-high-border: #eababb;
+  --style-risk-mid-border: #ead8b6;
+  --style-risk-low-border: #bddbc9;
+}
+```
+
+## E. Blue — Institutional Grid
+
+```css
+:root {
+  --report-bg: #ffffff;
+  --report-surface: #ffffff;
+  --report-subtle: #f4f4f4;
+  --report-subtle-2: #e9ecef;
+
+  --text-primary: #161616;
+  --text-secondary: #3f4b5a;
+  --text-muted: #6f6f6f;
+  --border-subtle: #d4dce5;
+  --border-strong: #c0c9d5;
+
+  --accent-primary: #0f62fe;
+  --accent-secondary: #0043ce;
+  --accent-tertiary: #8a6d3b;
+  --accent-soft: #edf5ff;
+  --accent-strong: #002d9c;
+
+  --semantic-positive: #198038;
+  --semantic-negative: #da1e28;
+  --semantic-warning: #b28600;
+  --semantic-info: #0043ce;
+
+  --chart-1: #0f62fe;
+  --chart-2: #0043ce;
+  --chart-3: #6f6f6f;
+  --chart-4: #8a6d3b;
+  --chart-5: #198038;
+  --chart-6: #da1e28;
+  --echarts-palette: #0f62fe, #0043ce, #6f6f6f, #8a6d3b, #198038, #da1e28;
+
+  --style-title-rule-width: 2px;
+  --style-section-accent-width: 3px;
+  --style-card-radius: 4px;
+  --style-kpi-accent-width: 3px;
+  --style-panel-top-accent-width: 2px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: #f9fbfd;
+  --style-risk-high-bg: #fff3f4;
+  --style-risk-mid-bg: #fff9ef;
+  --style-risk-low-bg: #eff8f1;
+  --style-risk-high-border: #f2bcc0;
+  --style-risk-mid-border: #e9d6ab;
+  --style-risk-low-border: #bedbc8;
+}
+```
+
 ## 旧方案兼容
 
 | 旧值 | 新值 |
 |------|------|
-| `consulting-navy` | `consulting-classic` |
-| `institutional-blue` | `institutional-carbon` |
-| `corporate-neutral` | `financial-blue` |
-| `financial-trust` | `financial-blue` |
-| `boardroom-green` | `financial-blue` |
-| `monochrome-executive` | `banker-monochrome` |
-| `mckinsey-blue` | `consulting-classic` |
-| `modern-slate` | `institutional-carbon` |
-| `warm-clay` | `burgundy-editorial` |
-| `forest-green` | `financial-blue` |
-| `minimal-light` | `banker-monochrome` |
+| `consulting-classic` | `green` |
+| `institutional-carbon` | `blue` |
+| `banker-monochrome` | `black` |
+| `financial-blue` | `blue` |
+| `burgundy-editorial` | `wine` |
+| `consulting-navy` | `green` |
+| `institutional-blue` | `blue` |
+| `corporate-neutral` | `blue` |
+| `financial-trust` | `blue` |
+| `boardroom-green` | `green` |
+| `monochrome-executive` | `black` |
+| `mckinsey-blue` | `green` |
+| `modern-slate` | `blue` |
+| `warm-clay` | `warm` |
+| `forest-green` | `green` |
+| `minimal-light` | `black` |
 
 ## 变量说明
 
