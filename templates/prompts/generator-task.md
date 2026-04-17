@@ -34,6 +34,15 @@
 
 `id` 推荐为纯数字字符串。输出文件名必须是 `chart-fragments/C{id}.html`，例如 `id: "1"` 输出 `chart-fragments/C1.html`。如果输入误给 `C1`，只输出 `C1.html`，不得变成 `CC1.html`。
 
+## 执行硬约束
+
+- 本任务只负责生成单个图表片段，禁止执行组装和 PDF 导出
+- 输出路径必须是 `chart-fragments/C{id}.html`，禁止 `chart_01_xxx.html` 或其他自定义命名
+- 不得写 `assemble_final.py`、`report_final.html`、`report_final.pdf`
+- 如果输入数据不足以生成高质量图表，必须改为结构图/观点卡/表格，不得输出空壳图
+- 禁止在图中输出占位锚点文本（如 `CH2_SECTION_2_2`、`TODO_ANCHOR`）
+- 如果无法满足上述约束，必须停止并返回错误，不得用替代流程“先跑通”
+
 ## 输出
 
 只写 HTML 片段，不要写完整页面结构。片段必须写入：
