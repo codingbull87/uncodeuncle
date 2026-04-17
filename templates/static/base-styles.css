@@ -5,24 +5,69 @@
 
 /* >>> templates/static/css/00-tokens.css */
 :root {
-  --ink: #25303b;
-  --ink-strong: #111827;
-  --muted: #64748b;
-  --soft: #94a3b8;
-  --line: #d9e2ec;
-  --line-strong: #c7d2df;
+  --report-bg: #ffffff;
+  --report-surface: #ffffff;
+  --report-subtle: #f7f8fa;
+  --report-subtle-2: #edf2f7;
+
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --accent-primary: #1f4e79;
+  --accent-secondary: #0070d1;
+  --accent-tertiary: #b8860b;
+  --accent-soft: #ebf0f7;
+  --accent-strong: #17365d;
+
+  --semantic-positive: #276749;
+  --semantic-negative: #c53030;
+  --semantic-warning: #b7791f;
+  --semantic-info: #2b6cb0;
+
+  --chart-1: #1f4e79;
+  --chart-2: #0070d1;
+  --chart-3: #718096;
+  --chart-4: #b8860b;
+  --chart-5: #276749;
+  --chart-6: #c53030;
+  --echarts-palette: #1f4e79, #0070d1, #718096, #b8860b, #276749, #c53030;
+
+  /* Compatibility aliases for existing templates and older fragments. */
+  --color-primary: var(--chart-1);
+  --color-primary-dark: var(--accent-strong);
+  --color-positive: var(--semantic-positive);
+  --color-negative: var(--semantic-negative);
+  --color-accent: var(--accent-tertiary);
+  --color-secondary: var(--text-muted);
+  --color-border: var(--border-subtle);
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: var(--text-primary);
+  --color-text-secondary: var(--text-muted);
+
+  --ink: var(--text-secondary);
+  --ink-strong: var(--text-primary);
+  --muted: var(--text-muted);
+  --soft: var(--text-muted);
+  --line: var(--border-subtle);
+  --line-strong: var(--border-strong);
   --paper: #ffffff;
-  --wash: #f6f8fb;
-  --wash-2: #edf7f5;
-  --brand: #0f766e;
-  --brand-dark: #134e4a;
-  --brand-soft: #ccfbf1;
-  --green: #0f7a4f;
-  --red: #b42318;
-  --amber: #b45309;
-  --blue: #2563eb;
-  --graphite: #374151;
-  --shadow: 0 2px 16px rgba(15, 76, 70, 0.12);
+  --wash: var(--report-subtle);
+  --wash-2: var(--accent-soft);
+  --brand: var(--accent-primary);
+  --brand-dark: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+  --green: var(--semantic-positive);
+  --red: var(--semantic-negative);
+  --amber: var(--semantic-warning);
+  --blue: var(--semantic-info);
+  --graphite: var(--text-secondary);
+  --table-header-bg: var(--report-subtle-2);
+  --table-header-text: var(--text-primary);
+  --shadow: 0 2px 12px rgba(17, 24, 39, 0.06);
 }
 
 /* >>> templates/static/css/10-document.css */
@@ -31,7 +76,7 @@
 }
 
 html {
-  background: #eef2f5;
+  background: #ffffff;
 }
 
 body {
@@ -40,7 +85,7 @@ body {
   font-size: 14px;
   line-height: 1.78;
   color: var(--ink);
-  background: #eef2f5;
+  background: #ffffff;
   padding: 40px 20px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -141,7 +186,7 @@ p {
 }
 
 strong {
-  color: var(--red);
+  color: var(--ink-strong);
   font-weight: 800;
 }
 
@@ -183,8 +228,8 @@ table {
 }
 
 th {
-  background: var(--brand-dark);
-  color: #fff;
+  background: var(--table-header-bg);
+  color: var(--table-header-text);
   padding: 8px 12px;
   text-align: left;
   font-weight: 800;
@@ -199,7 +244,7 @@ td {
 }
 
 tr:nth-child(even) td {
-  background: #f8fafc;
+  background: var(--report-subtle);
 }
 
 tr:last-child td {

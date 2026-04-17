@@ -62,20 +62,25 @@ chart-fragments/C{id}.html
 - 颜色必须有语义，不能随机配色
 - 同一份报告遵循同一套组件语言，不为单张图发明新风格
 
-推荐语义配色（来自 `DESIGN_BRIEF.json` 的 `color_scheme` 字段）：
+推荐语义配色来自 `DESIGN_BRIEF.json` 的 `color_scheme` 字段。正式报告必须保持白色底板；palette 只控制标题点缀、边框、关键数字、语义状态和图表系列色。
 
 ```css
-/* 默认：mckinsey-blue */
---color-primary: #1e3a5f;
---color-positive: #166534;
---color-negative: #991b1b;
---color-accent: #d97706;
---color-secondary: #64748b;
---color-border: #d1d5db;
---echarts-palette: #1e3a5f, #2563eb, #166534, #d97706, #991b1b;
+/* 默认：consulting-navy */
+--chart-1: #1f4e79;
+--chart-2: #0070d1;
+--chart-3: #718096;
+--chart-4: #b8860b;
+--chart-5: #276749;
+--chart-6: #c53030;
+--accent-primary: #1f4e79;
+--accent-secondary: #0070d1;
+--accent-tertiary: #b8860b;
+--semantic-positive: #276749;
+--semantic-negative: #c53030;
+--semantic-warning: #b7791f;
 ```
 
-**必须从 `DESIGN_BRIEF.json` 读取 `color_scheme`**，对照 `references/color-palettes.md` 加载对应色板。HTML/CSS 中使用 CSS 变量。ECharts option 中不得直接传入 `'var(--color-*)'` 字符串，必须用 `getComputedStyle` 读取变量值后传入。
+**必须从 `DESIGN_BRIEF.json` 读取 `color_scheme`**，对照 `references/color-palettes.md` 加载对应色板。HTML/CSS 中使用 CSS 变量，优先使用 `--chart-*`、`--accent-*`、`--semantic-*`、`--text-*` 和 `--border-*`。ECharts option 中不得直接传入 `'var(--*)'` 字符串，必须用 `getComputedStyle` 读取变量值后传入。不要给 `.page`、`.chart-container`、`.consulting-figure` 或核心卡片设置深色/品牌色背景。
 
 生成前必须读取 `references/component-contracts.json`，并按 recommendation 的 `type` 使用对应 DOM contract。禁止自创结构类名。
 

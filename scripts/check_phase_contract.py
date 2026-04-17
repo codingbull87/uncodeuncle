@@ -46,7 +46,11 @@ def validate_design_brief_json(report_dir: Path) -> tuple[list[str], list[str]]:
         return errors, warnings
 
     color_scheme = str(payload.get("color_scheme", "")).strip().lower()
-    allowed = {"mckinsey-blue", "modern-slate", "warm-clay", "forest-green", "minimal-light"}
+    allowed = {
+        "consulting-navy", "institutional-blue", "corporate-neutral",
+        "financial-trust", "boardroom-green", "monochrome-executive",
+        "mckinsey-blue", "modern-slate", "warm-clay", "forest-green", "minimal-light",
+    }
     if not color_scheme:
         errors.append("DESIGN_BRIEF.json 缺少 color_scheme")
     elif color_scheme not in allowed:

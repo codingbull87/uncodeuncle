@@ -33,7 +33,7 @@ SOURCE_BLOCK = re.compile(
 HEIGHT_PX = re.compile(r"height\s*:\s*(\d{2,4})px", flags=re.IGNORECASE)
 CLASS_ATTR = re.compile(r'class=["\']([^"\']+)["\']', flags=re.IGNORECASE)
 HEX_COLOR = re.compile(r"#[0-9a-fA-F]{3,8}\b")
-ECHARTS_CSS_VAR_STRING = re.compile(r"['\"]var\(--color-[^)]+\)['\"]")
+ECHARTS_CSS_VAR_STRING = re.compile(r"['\"]var\(--[^)]+\)['\"]")
 ECHARTS_INIT = re.compile(r"echarts\.init\s*\(", flags=re.IGNORECASE)
 SVG_RENDERER = re.compile(r"renderer\s*:\s*['\"]svg['\"]", flags=re.IGNORECASE)
 CHART_ID = re.compile(r'id=["\'](chart-C\d+)["\']', flags=re.IGNORECASE)

@@ -37,6 +37,7 @@ You do not modify recommendations, fragments, assembled HTML, or PDF outputs.
    - No unknown structural classes
    - No ECharts CSS variable strings in option objects
    - No hardcoded hex colors outside palette/style definitions
+   - Formal report surfaces remain white: `html`, `body`, `.page`, `.chart-container`, `.consulting-figure`, tables, and core cards must not use dark or saturated palette backgrounds
 9. Final layout checks:
    - Expected grouped recommendations actually produce `.visual-row`
    - HTML QA passes before export

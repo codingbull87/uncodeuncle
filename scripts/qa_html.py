@@ -96,6 +96,29 @@ def visual_ids(html: str) -> set[str]:
     return {normalize_chart_id(item) for item in re.findall(r'data-chart-id=["\']([^"\']+)["\']', html, flags=re.IGNORECASE)}
 
 
+def css_root_variables(html: str) -> dict[str, str]:
+    variables: dict[str, str] = {}
+    for block in re.findall(r":root\s*\{(.*?)\}", html, flags=re.IGNORECASE | re.DOTALL):
+        for name, value in re.findall(r"(--[a-zA-Z0-9_-]+)\s*:\s*([^;]+);", block):
+            variables[name.strip()] = re.sub(r"\s+", " ", value).strip().lower()
+    return variables
+
+
+def is_white_css_value(value: str) -> bool:
+    normalized = value.strip().lower().replace(" ", "")
+    return normalized in {"#fff", "#ffffff", "white", "rgb(255,255,255)", "rgba(255,255,255,1)"}
+
+
+def check_report_surface_tokens(html: str) -> list[str]:
+    errors: list[str] = []
+    variables = css_root_variables(html)
+    for token in ("--report-bg", "--report-surface", "--color-bg", "--color-surface", "--paper"):
+        value = variables.get(token)
+        if value and not is_white_css_value(value):
+            errors.append(f"正式报告大面积底板 token 必须为白色：{token}={value}")
+    return errors
+
+
 def run_qa(report_dir: Path, html_path: Path) -> tuple[list[str], list[str], dict[str, Any]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -129,6 +152,8 @@ def run_qa(report_dir: Path, html_path: Path) -> tuple[list[str], list[str], dic
 
     if ECHARTS_CSS_VAR_STRING.search(html):
         errors.append("最终 HTML 中 ECharts option 仍直接传入 CSS 变量字符串")
+
+    errors.extend(check_report_surface_tokens(html))
 
     unknown_classes = sorted(cls for cls in classes_in(html) if cls not in DOC_ALLOWED_CLASSES)
     # Fragment classes are validated by lint_fragments; here only catch known generator drift classes.

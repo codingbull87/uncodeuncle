@@ -835,11 +835,26 @@ def inject_charts_into_content(
 # ─── 配色系统 ───────────────────────────────────────────────────────────────
 
 PALETTE_MAP: dict[str, str] = {
-    "mckinsey-blue":  "McKinsey Blue",
-    "modern-slate":   "Modern Slate",
-    "warm-clay":      "Warm Clay",
-    "forest-green":   "Forest Green",
-    "minimal-light":  "Minimal Light",
+    "consulting-navy": "Consulting Navy",
+    "institutional-blue": "Institutional Blue",
+    "corporate-neutral": "Corporate Neutral",
+    "financial-trust": "Financial Trust",
+    "boardroom-green": "Boardroom Green",
+    "monochrome-executive": "Monochrome Executive",
+    # Backward-compatible aliases for reports produced by older skill versions.
+    "mckinsey-blue": "Consulting Navy",
+    "modern-slate": "Institutional Blue",
+    "warm-clay": "Corporate Neutral",
+    "forest-green": "Boardroom Green",
+    "minimal-light": "Monochrome Executive",
+}
+
+PALETTE_ALIASES: dict[str, str] = {
+    "mckinsey-blue": "consulting-navy",
+    "modern-slate": "institutional-blue",
+    "warm-clay": "corporate-neutral",
+    "forest-green": "boardroom-green",
+    "minimal-light": "monochrome-executive",
 }
 
 
@@ -852,19 +867,22 @@ def load_color_palette(skill_dir: str, color_scheme: str) -> str:
 
     content = read_file(palette_path)
 
+    normalized_scheme = PALETTE_ALIASES.get(color_scheme, color_scheme)
+
     # 调色板标题关键字（用于唯一定位章节）
     scheme_keys = {
-        "mckinsey-blue":  "A. McKinsey Blue",
-        "modern-slate":   "B. Modern Slate",
-        "warm-clay":      "C. Warm Clay",
-        "forest-green":   "D. Forest Green",
-        "minimal-light":   "E. Minimal Light",
+        "consulting-navy": "A. Consulting Navy",
+        "institutional-blue": "B. Institutional Blue",
+        "corporate-neutral": "C. Corporate Neutral",
+        "financial-trust": "D. Financial Trust",
+        "boardroom-green": "E. Boardroom Green",
+        "monochrome-executive": "F. Monochrome Executive",
     }
-    target = scheme_keys.get(color_scheme, "A. McKinsey Blue")
+    target = scheme_keys.get(normalized_scheme, "A. Consulting Navy")
 
-    # 匹配 "## {id}. {name} — ..." 到下一个 ## 标题之间的内容
+    # 匹配 "## {id}. {name} — ..." 到下一个 palette 标题之间的内容。
     pattern = re.compile(
-        r"(^## " + re.escape(target) + r" — .*?)\n(.*?)(?=^##\s+[A-E]\.|\Z)",
+        r"(^## " + re.escape(target) + r" — .*?)\n(.*?)(?=^##\s+[A-F]\.|^## 旧方案兼容|^## 变量说明|\Z)",
         re.MULTILINE | re.DOTALL,
     )
     m = pattern.search(content)
@@ -906,86 +924,51 @@ def load_color_scheme_css(skill_dir: str, report_dir: str) -> str:
 
 
 def build_legacy_token_bridge(color_scheme: str) -> str:
-    """Map palette tokens onto the older template token names used by split CSS."""
-    if color_scheme == "modern-slate":
-        return """
-:root {
-  --ink: var(--color-text);
-  --ink-strong: var(--color-text);
-  --muted: var(--color-text-secondary);
-  --soft: var(--color-secondary);
-  --line: var(--color-border);
-  --line-strong: var(--color-border);
-  --paper: var(--color-bg);
-  --wash: var(--color-surface);
-  --wash-2: #263449;
-  --brand: var(--color-accent);
-  --brand-dark: var(--color-text);
-  --brand-soft: #27335f;
-  --green: var(--color-positive);
-  --red: var(--color-negative);
-  --amber: #f59e0b;
-  --blue: #60a5fa;
-  --graphite: var(--color-text-secondary);
-  --shadow: 0 2px 16px rgba(0, 0, 0, 0.28);
-}
-html,
-body {
-  background: var(--color-bg);
-}
-.page,
-.chart-container,
-.consulting-figure,
-.kpi-card,
-.insight-card,
-.framework-card,
-.scorecard-item,
-.matrix-cell,
-.risk-cell,
-.heatmap-cell,
-.chain-step,
-.driver-branch,
-.decision-node,
-.swimlane-milestone {
-  background: var(--color-surface);
-}
-td,
-.matrix-cell-body,
-.risk-body,
-.heatmap-body,
-.timeline-body,
-.chain-step-body,
-.driver-body,
-.decision-body,
-.insight-card-body,
-.framework-card-body,
-.scorecard-body {
-  color: var(--color-text-secondary);
-}
-"""
+    """Map report palette tokens onto legacy template and fragment token names.
+
+    Large surfaces are intentionally pinned to white. Palette changes must affect
+    accents, chart series, borders, and semantic colors rather than turning the
+    report into a web-theme skin.
+    """
     return """
 :root {
-  --ink: var(--color-text);
-  --ink-strong: var(--color-text);
-  --muted: var(--color-text-secondary);
-  --soft: var(--color-secondary);
-  --line: var(--color-border);
-  --line-strong: var(--color-border);
-  --paper: var(--color-bg);
-  --wash: var(--color-surface);
-  --wash-2: var(--color-surface);
-  --brand: var(--color-primary);
-  --brand-dark: var(--color-primary-dark);
-  --brand-soft: var(--color-surface);
-  --green: var(--color-positive);
-  --red: var(--color-negative);
-  --amber: var(--color-accent);
-  --blue: #2563eb;
-  --graphite: var(--color-secondary);
+  --color-primary: var(--chart-1);
+  --color-primary-dark: var(--accent-strong);
+  --color-positive: var(--semantic-positive);
+  --color-negative: var(--semantic-negative);
+  --color-accent: var(--accent-tertiary);
+  --color-secondary: var(--text-muted);
+  --color-border: var(--border-subtle);
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: var(--text-primary);
+  --color-text-secondary: var(--text-muted);
+
+  --ink: var(--text-secondary);
+  --ink-strong: var(--text-primary);
+  --muted: var(--text-muted);
+  --soft: var(--text-muted);
+  --line: var(--border-subtle);
+  --line-strong: var(--border-strong);
+  --paper: #ffffff;
+  --wash: var(--report-subtle);
+  --wash-2: var(--accent-soft);
+  --brand: var(--accent-primary);
+  --brand-dark: var(--accent-strong);
+  --brand-soft: var(--accent-soft);
+  --green: var(--semantic-positive);
+  --red: var(--semantic-negative);
+  --amber: var(--semantic-warning);
+  --blue: var(--semantic-info);
+  --graphite: var(--text-secondary);
+  --table-header-bg: var(--report-subtle-2);
+  --table-header-text: var(--text-primary);
+  --shadow: 0 2px 12px rgba(17, 24, 39, 0.06);
 }
 html,
-body {
-  background: var(--color-surface);
+body,
+.page {
+  background: #ffffff;
 }
 """
 

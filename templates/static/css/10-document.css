@@ -3,7 +3,7 @@
 }
 
 html {
-  background: #eef2f5;
+  background: #ffffff;
 }
 
 body {
@@ -12,7 +12,7 @@ body {
   font-size: 14px;
   line-height: 1.78;
   color: var(--ink);
-  background: #eef2f5;
+  background: #ffffff;
   padding: 40px 20px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -113,7 +113,7 @@ p {
 }
 
 strong {
-  color: var(--red);
+  color: var(--ink-strong);
   font-weight: 800;
 }
 
@@ -155,8 +155,8 @@ table {
 }
 
 th {
-  background: var(--brand-dark);
-  color: #fff;
+  background: var(--table-header-bg);
+  color: var(--table-header-text);
   padding: 8px 12px;
   text-align: left;
   font-weight: 800;
@@ -171,7 +171,7 @@ td {
 }
 
 tr:nth-child(even) td {
-  background: #f8fafc;
+  background: var(--report-subtle);
 }
 
 tr:last-child td {

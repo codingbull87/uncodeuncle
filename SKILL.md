@@ -205,43 +205,44 @@ pandoc {report.md} \
 
 #### 配色选择步骤（Phase 2 末尾执行）
 
-读取 `references/color-palettes.md`，根据报告内容/行业/语气，从 5 个调色板中选择最合适的 3 个呈现给用户：
+读取 `references/color-palettes.md`，根据报告内容/行业/语气，从 6 个白底正式报告调色板中选择最合适的 3 个呈现给用户。
+
+**硬约束：** 本 skill 面向正式报告，不面向网页换肤。候选 palette 必须保持白色页面底板，配色只影响标题点缀、表格线、关键数字、图表系列色和语义状态。禁止推荐深色底、大面积品牌色底、渐变底或营销页式 palette。
 
 **路由参考：**
-- 金融/投资/严肃商务报告 → **A. McKinsey Blue**
-- 科技/AI/互联网行业分析 → **B. Modern Slate**
-- 人文/培训/方法论/个人成长 → **C. Warm Clay**
-- 战略建议/增长机会/积极判断 → **D. Forest Green**
-- 知识管理/学术/极简笔记 → **E. Minimal Light**
+- 战略研究/投资判断/咨询交付 → **A. Consulting Navy** (`consulting-navy`)
+- 企业级/机构级/技术平台报告 → **B. Institutional Blue** (`institutional-blue`)
+- 通用商务/内部汇报/培训材料 → **C. Corporate Neutral** (`corporate-neutral`)
+- 金融/订阅/收入模型/ARPU → **D. Financial Trust** (`financial-trust`)
+- 增长机会/长期战略/经营改善 → **E. Boardroom Green** (`boardroom-green`)
+- 文字密集/董事会摘要/低装饰报告 → **F. Monochrome Executive** (`monochrome-executive`)
 
 呈现格式：
 
 ```
 配色候选（请选一个，或告诉我要调整）：
 
-[A] McKinsey Blue — 咨询报告经典，深蓝+金色，适合正式交付
-[B] Modern Slate — 科技感，深色底+翠绿，适合AI/互联网报告  
-[C] Warm Clay — 暖棕+森绿，适合人文/培训/方法论
-[D] Forest Green — 深森绿，适合战略/增长/机会判断
-[E] Minimal Light — 极简浅灰，适合知识整理/学术
+[A] Consulting Navy — 白底+深蓝+深金，适合咨询/投行正式交付
+[B] Institutional Blue — 白底+企业蓝+石墨灰，适合技术平台/机构报告
+[D] Financial Trust — 白底+金融蓝+语义红绿，适合收入模型/订阅业务
 
 当前默认：[A]
 ```
 
-用户回复编号（A/B/C/D/E）或直接给方向词。选完后，在 `DESIGN_BRIEF.md` 末尾写入：
+用户回复编号（A/B/C/D/E/F）或直接给方向词。选完后，在 `DESIGN_BRIEF.md` 末尾写入：
 
 ```markdown
-- 调色板：A. McKinsey Blue
+- 调色板：A. Consulting Navy
 ```
 
 并在 `DESIGN_BRIEF.json` 中写入对应字段：
 
 ```json
 {
-  "color_scheme": "mckinsey-blue",
+  "color_scheme": "consulting-navy",
   "color_confirmed": true,
   "color_selected_by": "user",
-  "color_candidates": ["mckinsey-blue", "modern-slate", "forest-green"]
+  "color_candidates": ["consulting-navy", "institutional-blue", "financial-trust"]
 }
 ```
 
