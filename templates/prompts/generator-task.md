@@ -62,10 +62,10 @@ chart-fragments/C{id}.html
 - 颜色必须有语义，不能随机配色
 - 同一份报告遵循同一套组件语言，不为单张图发明新风格
 
-推荐语义配色来自 `DESIGN_BRIEF.json` 的 `color_scheme` 字段。正式报告必须保持白色底板；palette 只控制标题点缀、边框、关键数字、语义状态和图表系列色。
+推荐语义配色来自 `DESIGN_BRIEF.json` 的 `color_scheme` 字段。正式报告必须保持白色底板；palette 只控制标题点缀、边框、关键数字、语义状态、图表系列色和组件处理参数（线宽、圆角、表头/风险格样式）。
 
 ```css
-/* 默认：consulting-navy */
+/* 默认：consulting-classic */
 --chart-1: #1f4e79;
 --chart-2: #0070d1;
 --chart-3: #718096;

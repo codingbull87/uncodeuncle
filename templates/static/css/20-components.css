@@ -2,7 +2,7 @@
 .consulting-figure {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   padding: 18px 22px;
   box-shadow: 0 1px 8px rgba(17, 24, 39, 0.06);
   overflow: hidden;
@@ -67,8 +67,8 @@
 .kpi-card {
   background: #fff;
   border: 1px solid var(--line);
-  border-left: 4px solid var(--brand);
-  border-radius: 6px;
+  border-left: var(--style-kpi-accent-width) solid var(--brand);
+  border-radius: var(--style-card-radius);
   padding: 15px 17px;
 }
 
@@ -142,8 +142,8 @@
 .framework-card,
 .scorecard-item {
   border: 1px solid var(--line);
-  border-top: 3px solid var(--brand);
-  border-radius: 6px;
+  border-top: var(--style-panel-top-accent-width) solid var(--brand);
+  border-radius: var(--style-card-radius);
   padding: 13px 15px;
   background: #fff;
 }
@@ -172,7 +172,7 @@
   min-width: 38px;
   height: 24px;
   margin-bottom: 8px;
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: var(--brand-soft);
   color: var(--brand-dark);
   font-weight: 800;
@@ -183,7 +183,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   border: 1px solid var(--line-strong);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   overflow: hidden;
   background: #fff;
 }
@@ -232,26 +232,26 @@
   min-height: 76px;
   padding: 11px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: #fff;
 }
 
 .risk-cell.high,
 .heatmap-cell.high {
-  border-color: #f4b4aa;
-  background: #fff1ef;
+  border-color: var(--style-risk-high-border);
+  background: var(--style-risk-high-bg);
 }
 
 .risk-cell.mid,
 .heatmap-cell.mid {
-  border-color: #f7d28a;
-  background: #fff8e8;
+  border-color: var(--style-risk-mid-border);
+  background: var(--style-risk-mid-bg);
 }
 
 .risk-cell.low,
 .heatmap-cell.low {
-  border-color: #a8dbc6;
-  background: #eefaf4;
+  border-color: var(--style-risk-low-border);
+  background: var(--style-risk-low-bg);
 }
 
 .risk-title,
@@ -322,8 +322,8 @@
 .chain-step {
   position: relative;
   border: 1px solid var(--line);
-  border-top: 3px solid var(--brand);
-  border-radius: 6px;
+  border-top: var(--style-panel-top-accent-width) solid var(--brand);
+  border-radius: var(--style-card-radius);
   padding: 12px 13px;
   background: #fff;
 }
@@ -353,7 +353,7 @@
   justify-content: center;
   text-align: center;
   border: 2px solid var(--brand);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   padding: 16px;
   color: var(--brand-dark);
   font-weight: 800;
@@ -367,8 +367,8 @@
 
 .driver-branch {
   border: 1px solid var(--line);
-  border-left: 4px solid var(--brand);
-  border-radius: 6px;
+  border-left: var(--style-kpi-accent-width) solid var(--brand);
+  border-radius: var(--style-card-radius);
   padding: 10px 12px;
   background: #fff;
 }
@@ -406,7 +406,7 @@
 .range-track {
   position: relative;
   height: 18px;
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: #e8eef5;
   overflow: hidden;
 }
@@ -415,7 +415,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: var(--brand);
 }
 
@@ -449,7 +449,7 @@
 
 .swimlane-label {
   padding: 9px 10px;
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: var(--brand-dark);
   color: #fff;
   font-size: 12px;
@@ -465,7 +465,7 @@
 .swimlane-milestone {
   padding: 9px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: #fff;
   font-size: 11.5px;
   color: #475569;
@@ -479,7 +479,7 @@
 
 .decision-node {
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   padding: 11px 12px;
   background: #fff;
 }

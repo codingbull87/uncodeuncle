@@ -1,21 +1,18 @@
-# Report Palettes — 正式报告白底调色板
+# Report Visual Systems — 正式报告视觉系统
 
-> 这些 palette 面向长篇 Markdown -> 正式 PDF/HTML 报告，不是网页主题。所有方案都必须保持白色页面底板；配色只影响标题点缀、表格线、关键数字、语义色和图表系列色。
+> 这里不是网页主题。所有方案都保持白色底板，变化点是：图表色、标题点缀、表格/卡片处理、语义色与组件细节参数。
 
-## 调色板一览
+## 视觉系统一览
 
-| 代号 | `color_scheme` | 名称 | 定位 | 主强调色 | 适用场景 |
-|------|----------------|------|------|----------|----------|
-| **A** | `consulting-navy` | Consulting Navy | 咨询/投行交付 | `#1f4e79` | 战略研究、投资判断、正式交付 |
-| **B** | `institutional-blue` | Institutional Blue | 企业级/机构级 | `#0f62fe` | 科技公司、平台业务、管理层报告 |
-| **C** | `corporate-neutral` | Corporate Neutral | 通用商务 | `#2563eb` | 内部汇报、跨部门分析、培训材料 |
-| **D** | `financial-trust` | Financial Trust | 金融/订阅/收入模型 | `#0052cc` | 金融、订阅、ARPU、商业模式分析 |
-| **E** | `boardroom-green` | Boardroom Green | 增长/战略建议 | `#166534` | 增长机会、长期路线、经营改善 |
-| **F** | `monochrome-executive` | Monochrome Executive | 极简高密度 | `#18181b` | 文字密集、董事会摘要、低装饰报告 |
+| 代号 | `color_scheme` | 名称 | 风格定位 | 适用场景 |
+|------|----------------|------|----------|----------|
+| **A** | `consulting-classic` | Consulting Classic | 深蓝+深金，咨询交付密度 | 战略研究、投资判断、咨询交付 |
+| **B** | `institutional-carbon` | Institutional Carbon | 企业蓝+冷灰，系统化 | 科技平台、机构汇报、管理层材料 |
+| **C** | `banker-monochrome` | Banker Monochrome | 黑灰+少量蓝，投行 memo | 董事会摘要、文字密集、财务页 |
+| **D** | `financial-blue` | Financial Blue | 信任蓝+语义红绿，金融分析 | 订阅、ARPU、收入模型、估值框架 |
+| **E** | `burgundy-editorial` | Burgundy Editorial | 酒红+炭黑+暗金，编辑化正式风 | 消费品牌、战略评论、高层叙事页 |
 
-## 白底硬规则
-
-所有 palette 必须满足：
+## 白底硬约束
 
 ```css
 --report-bg: #ffffff;
@@ -23,18 +20,16 @@
 --paper: #ffffff;
 ```
 
-允许使用 `--report-subtle` / `--accent-soft` 作为浅色表头、隔行底、轻量强调区，但禁止把正文页、卡片主体、图表容器改成深色或品牌色底。
+禁止把 `.page`、正文区、图表容器改成深色或高饱和底色。
 
-## A. Consulting Navy — 咨询/投行交付
-
-源自 McKinsey Delivery 风格：白底、深蓝标题、蓝灰结构线、深金少量点缀。
+## A. Consulting Classic — 深蓝咨询风
 
 ```css
 :root {
   --report-bg: #ffffff;
   --report-surface: #ffffff;
   --report-subtle: #f7f8fa;
-  --report-subtle-2: #edf2f7;
+  --report-subtle-2: #eef2f7;
 
   --text-primary: #1a202c;
   --text-secondary: #4a5568;
@@ -60,31 +55,43 @@
   --chart-5: #276749;
   --chart-6: #c53030;
   --echarts-palette: #1f4e79, #0070d1, #718096, #b8860b, #276749, #c53030;
+
+  --style-title-rule-width: 3px;
+  --style-section-accent-width: 4px;
+  --style-card-radius: 6px;
+  --style-kpi-accent-width: 4px;
+  --style-panel-top-accent-width: 3px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: var(--report-subtle);
+  --style-risk-high-bg: #fff1ef;
+  --style-risk-mid-bg: #fff8e8;
+  --style-risk-low-bg: #eefaf4;
+  --style-risk-high-border: #f4b4aa;
+  --style-risk-mid-border: #f7d28a;
+  --style-risk-low-border: #a8dbc6;
 }
 ```
 
-## B. Institutional Blue — 企业级/机构级
-
-源自 IBM / Enterprise Blue 的白底报告改造版：企业蓝、石墨灰、冷灰网格，适合技术与平台型业务。
+## B. Institutional Carbon — 企业系统风
 
 ```css
 :root {
   --report-bg: #ffffff;
   --report-surface: #ffffff;
   --report-subtle: #f4f7fb;
-  --report-subtle-2: #e8eef7;
+  --report-subtle-2: #e9eff8;
 
   --text-primary: #161616;
-  --text-secondary: #525252;
-  --text-muted: #6f6f6f;
-  --border-subtle: #e0e0e0;
-  --border-strong: #c6c6c6;
+  --text-secondary: #3f4b5a;
+  --text-muted: #6b7280;
+  --border-subtle: #dce3ec;
+  --border-strong: #c8d3e1;
 
   --accent-primary: #0f62fe;
-  --accent-secondary: #4589ff;
+  --accent-secondary: #3b82f6;
   --accent-tertiary: #8a6d3b;
   --accent-soft: #edf5ff;
-  --accent-strong: #002d9c;
+  --accent-strong: #003a8c;
 
   --semantic-positive: #198038;
   --semantic-negative: #da1e28;
@@ -93,55 +100,79 @@
 
   --chart-1: #0f62fe;
   --chart-2: #4589ff;
-  --chart-3: #6f6f6f;
+  --chart-3: #6b7280;
   --chart-4: #8a6d3b;
   --chart-5: #198038;
   --chart-6: #da1e28;
-  --echarts-palette: #0f62fe, #4589ff, #6f6f6f, #8a6d3b, #198038, #da1e28;
+  --echarts-palette: #0f62fe, #4589ff, #6b7280, #8a6d3b, #198038, #da1e28;
+
+  --style-title-rule-width: 2px;
+  --style-section-accent-width: 3px;
+  --style-card-radius: 8px;
+  --style-kpi-accent-width: 3px;
+  --style-panel-top-accent-width: 2px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: #f9fbff;
+  --style-risk-high-bg: #fff3f4;
+  --style-risk-mid-bg: #fff9ef;
+  --style-risk-low-bg: #eef8f1;
+  --style-risk-high-border: #f2bcc0;
+  --style-risk-mid-border: #e9d6ab;
+  --style-risk-low-border: #bedbc8;
 }
 ```
 
-## C. Corporate Neutral — 通用商务
-
-灰白文档感，单一蓝色点缀。安全、克制、适合长时间阅读。
+## C. Banker Monochrome — 投行黑灰风
 
 ```css
 :root {
   --report-bg: #ffffff;
   --report-surface: #ffffff;
-  --report-subtle: #f8fafc;
-  --report-subtle-2: #eef2f7;
+  --report-subtle: #f6f6f7;
+  --report-subtle-2: #ececee;
 
-  --text-primary: #1f2937;
-  --text-secondary: #4b5563;
-  --text-muted: #6b7280;
-  --border-subtle: #e5e7eb;
-  --border-strong: #d1d5db;
+  --text-primary: #111111;
+  --text-secondary: #2f3136;
+  --text-muted: #61656f;
+  --border-subtle: #d8dbe1;
+  --border-strong: #c5c8cf;
 
-  --accent-primary: #2563eb;
-  --accent-secondary: #60a5fa;
-  --accent-tertiary: #a16207;
-  --accent-soft: #eff6ff;
-  --accent-strong: #1e40af;
+  --accent-primary: #18181b;
+  --accent-secondary: #3b82f6;
+  --accent-tertiary: #7b674a;
+  --accent-soft: #f1f2f4;
+  --accent-strong: #09090b;
 
-  --semantic-positive: #059669;
-  --semantic-negative: #dc2626;
-  --semantic-warning: #d97706;
-  --semantic-info: #2563eb;
+  --semantic-positive: #1f6a43;
+  --semantic-negative: #9f1f24;
+  --semantic-warning: #8a6f1d;
+  --semantic-info: #2f5fb3;
 
-  --chart-1: #2563eb;
-  --chart-2: #64748b;
-  --chart-3: #60a5fa;
-  --chart-4: #a16207;
-  --chart-5: #059669;
-  --chart-6: #dc2626;
-  --echarts-palette: #2563eb, #64748b, #60a5fa, #a16207, #059669, #dc2626;
+  --chart-1: #18181b;
+  --chart-2: #52525b;
+  --chart-3: #8e8e97;
+  --chart-4: #3b82f6;
+  --chart-5: #1f6a43;
+  --chart-6: #9f1f24;
+  --echarts-palette: #18181b, #52525b, #8e8e97, #3b82f6, #1f6a43, #9f1f24;
+
+  --style-title-rule-width: 2px;
+  --style-section-accent-width: 3px;
+  --style-card-radius: 4px;
+  --style-kpi-accent-width: 3px;
+  --style-panel-top-accent-width: 2px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: #f8f8f9;
+  --style-risk-high-bg: #faf2f2;
+  --style-risk-mid-bg: #faf8f1;
+  --style-risk-low-bg: #f0f5f2;
+  --style-risk-high-border: #dfc0c1;
+  --style-risk-mid-border: #dfd1af;
+  --style-risk-low-border: #c3d6c9;
 }
 ```
 
-## D. Financial Trust — 金融/订阅/收入模型
-
-源自 Coinbase / Wise 的信任蓝逻辑：白底、金融蓝、深灰、绿色/红色只承担语义。
+## D. Financial Blue — 金融信任风
 
 ```css
 :root {
@@ -174,111 +205,94 @@
   --chart-5: #0f7a4f;
   --chart-6: #b42318;
   --echarts-palette: #0052cc, #2f80ed, #475569, #9a6700, #0f7a4f, #b42318;
+
+  --style-title-rule-width: 3px;
+  --style-section-accent-width: 4px;
+  --style-card-radius: 6px;
+  --style-kpi-accent-width: 4px;
+  --style-panel-top-accent-width: 3px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: #f8fbff;
+  --style-risk-high-bg: #fff2f0;
+  --style-risk-mid-bg: #fff7e7;
+  --style-risk-low-bg: #eef8f2;
+  --style-risk-high-border: #efb8b0;
+  --style-risk-mid-border: #e9cf96;
+  --style-risk-low-border: #b7dbc9;
 }
 ```
 
-## E. Boardroom Green — 增长/战略建议
-
-深绿作为治理与增长信号，保持白底和灰色结构线，避免页面泛绿。
+## E. Burgundy Editorial — 酒红编辑风
 
 ```css
 :root {
   --report-bg: #ffffff;
   --report-surface: #ffffff;
-  --report-subtle: #f8faf9;
-  --report-subtle-2: #edf5ef;
+  --report-subtle: #f9f6f7;
+  --report-subtle-2: #f1eaec;
 
-  --text-primary: #111827;
-  --text-secondary: #3f4b45;
-  --text-muted: #6b7280;
-  --border-subtle: #d8e3dd;
-  --border-strong: #c4d4ca;
+  --text-primary: #1d1b1c;
+  --text-secondary: #4b4346;
+  --text-muted: #756a6f;
+  --border-subtle: #e6dde0;
+  --border-strong: #d7c8cd;
 
-  --accent-primary: #166534;
-  --accent-secondary: #15803d;
-  --accent-tertiary: #a16207;
-  --accent-soft: #eef7f0;
-  --accent-strong: #14532d;
+  --accent-primary: #7a1f3d;
+  --accent-secondary: #b23a5f;
+  --accent-tertiary: #8d6b2f;
+  --accent-soft: #f6ecef;
+  --accent-strong: #5a122a;
 
-  --semantic-positive: #15803d;
-  --semantic-negative: #b91c1c;
-  --semantic-warning: #b45309;
-  --semantic-info: #2563eb;
+  --semantic-positive: #2a6a50;
+  --semantic-negative: #a12433;
+  --semantic-warning: #9a6b1b;
+  --semantic-info: #8f2f4f;
 
-  --chart-1: #166534;
-  --chart-2: #15803d;
-  --chart-3: #64748b;
-  --chart-4: #a16207;
-  --chart-5: #2563eb;
-  --chart-6: #b91c1c;
-  --echarts-palette: #166534, #15803d, #64748b, #a16207, #2563eb, #b91c1c;
-}
-```
+  --chart-1: #7a1f3d;
+  --chart-2: #b23a5f;
+  --chart-3: #756a6f;
+  --chart-4: #8d6b2f;
+  --chart-5: #2a6a50;
+  --chart-6: #a12433;
+  --echarts-palette: #7a1f3d, #b23a5f, #756a6f, #8d6b2f, #2a6a50, #a12433;
 
-## F. Monochrome Executive — 极简董事会风格
-
-黑灰为主，一种蓝色作为信息定位，红/绿只做风险与正向语义。
-
-```css
-:root {
-  --report-bg: #ffffff;
-  --report-surface: #ffffff;
-  --report-subtle: #f7f7f7;
-  --report-subtle-2: #eeeeee;
-
-  --text-primary: #18181b;
-  --text-secondary: #3f3f46;
-  --text-muted: #71717a;
-  --border-subtle: #e4e4e7;
-  --border-strong: #d4d4d8;
-
-  --accent-primary: #18181b;
-  --accent-secondary: #3b82f6;
-  --accent-tertiary: #8a6d3b;
-  --accent-soft: #f3f4f6;
-  --accent-strong: #09090b;
-
-  --semantic-positive: #15803d;
-  --semantic-negative: #b91c1c;
-  --semantic-warning: #a16207;
-  --semantic-info: #2563eb;
-
-  --chart-1: #18181b;
-  --chart-2: #52525b;
-  --chart-3: #a1a1aa;
-  --chart-4: #3b82f6;
-  --chart-5: #15803d;
-  --chart-6: #b91c1c;
-  --echarts-palette: #18181b, #52525b, #a1a1aa, #3b82f6, #15803d, #b91c1c;
+  --style-title-rule-width: 3px;
+  --style-section-accent-width: 4px;
+  --style-card-radius: 6px;
+  --style-kpi-accent-width: 4px;
+  --style-panel-top-accent-width: 3px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: #fbf8f9;
+  --style-risk-high-bg: #fff1f3;
+  --style-risk-mid-bg: #fff7eb;
+  --style-risk-low-bg: #edf7f2;
+  --style-risk-high-border: #efbcc9;
+  --style-risk-mid-border: #e8d3a8;
+  --style-risk-low-border: #b8d8c8;
 }
 ```
 
 ## 旧方案兼容
 
-旧 `color_scheme` 会被组装器映射到新的正式报告方案：
-
 | 旧值 | 新值 |
 |------|------|
-| `mckinsey-blue` | `consulting-navy` |
-| `modern-slate` | `institutional-blue` |
-| `warm-clay` | `corporate-neutral` |
-| `forest-green` | `boardroom-green` |
-| `minimal-light` | `monochrome-executive` |
+| `consulting-navy` | `consulting-classic` |
+| `institutional-blue` | `institutional-carbon` |
+| `corporate-neutral` | `financial-blue` |
+| `financial-trust` | `financial-blue` |
+| `boardroom-green` | `financial-blue` |
+| `monochrome-executive` | `banker-monochrome` |
+| `mckinsey-blue` | `consulting-classic` |
+| `modern-slate` | `institutional-carbon` |
+| `warm-clay` | `burgundy-editorial` |
+| `forest-green` | `financial-blue` |
+| `minimal-light` | `banker-monochrome` |
 
 ## 变量说明
 
-生成图表片段时，优先使用新变量：
-
-| 变量 | 用途 |
-|------|------|
-| `--chart-1` 到 `--chart-6` | 图表系列色，ECharts/SVG/HTML 图形的主色来源 |
-| `--accent-primary` | 标题竖线、关键边框、主强调 |
-| `--accent-secondary` | 辅助强调、第二图表色 |
-| `--accent-tertiary` | 少量深金/棕金点缀 |
-| `--semantic-positive` | 正向/改善/增长 |
-| `--semantic-negative` | 风险/下降/负面 |
-| `--semantic-warning` | 警示/不确定性 |
-| `--text-primary` / `--text-secondary` / `--text-muted` | 正文和注释文字 |
-| `--border-subtle` / `--border-strong` | 表格、图表、组件边框 |
-
-兼容旧片段时，组装器会把 `--color-primary`、`--color-positive`、`--color-negative` 等旧变量映射到上述正式报告 token。
+| 变量组 | 用途 |
+|--------|------|
+| `--chart-*` | 图表序列色 |
+| `--accent-*` | 标题/边框/强调点缀 |
+| `--semantic-*` | 风险、正向、警示 |
+| `--style-*` | 组件处理参数（线宽、圆角、表头、风险格样式） |

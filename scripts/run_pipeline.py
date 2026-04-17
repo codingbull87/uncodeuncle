@@ -9,6 +9,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -21,11 +22,23 @@ def run_cmd(cmd: list[str]) -> None:
         raise SystemExit(completed.returncode)
 
 
+def sparse_pages(layout_diag_path: Path) -> int:
+    if not layout_diag_path.exists():
+        return 0
+    try:
+        payload = json.loads(layout_diag_path.read_text(encoding="utf-8", errors="ignore"))
+    except json.JSONDecodeError:
+        return 0
+    items = payload.get("sparsePages", [])
+    return len(items) if isinstance(items, list) else 0
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Run guarded report-illustrator pipeline")
     parser.add_argument("report_dir", help="Report workspace directory")
     parser.add_argument("report_name", help="Output report basename without extension")
     parser.add_argument("--skip-export", action="store_true", help="Only assemble HTML, skip PDF export")
+    parser.add_argument("--skip-layout-repair", action="store_true", help="Skip layout diagnosis and automatic repair loop")
     args = parser.parse_args(argv[1:])
 
     script_dir = Path(__file__).resolve().parent
@@ -40,18 +53,28 @@ def main(argv: list[str]) -> int:
     export = script_dir / "export_pdf.py"
     qa_html = script_dir / "qa_html.py"
     qa_pdf = script_dir / "qa_pdf.py"
+    qa_layout = script_dir / "qa_layout.py"
+    repair_layout = script_dir / "repair_layout.py"
 
     run_cmd([python, str(check), str(report_dir), "before-fragments"])
     run_cmd([python, str(check), str(report_dir), "before-assemble"])
     run_cmd([python, str(assemble), str(report_dir), args.report_name + "_illustrated"])
     run_cmd([python, str(qa_html), str(report_dir)])
+    html_path = report_dir / f"{args.report_name}_illustrated.html"
+    layout_diag = report_dir / "LAYOUT_DIAGNOSIS.json"
+    run_cmd([python, str(qa_layout), str(html_path), str(layout_diag)])
+
+    if not args.skip_layout_repair and sparse_pages(layout_diag) > 0:
+        run_cmd([python, str(repair_layout), str(report_dir), str(layout_diag), str(report_dir / "LAYOUT_OVERRIDES.json")])
+        run_cmd([python, str(assemble), str(report_dir), args.report_name + "_illustrated"])
+        run_cmd([python, str(qa_html), str(report_dir), str(html_path)])
+        run_cmd([python, str(qa_layout), str(html_path), str(layout_diag)])
 
     if args.skip_export:
         print("[DONE] HTML 组装完成（已跳过 PDF 导出）")
         return 0
 
     run_cmd([python, str(check), str(report_dir), "before-export"])
-    html_path = report_dir / f"{args.report_name}_illustrated.html"
     pdf_path = report_dir / f"{args.report_name}_illustrated.pdf"
     run_cmd([python, str(qa_pdf), str(html_path), str(report_dir / "PDF_QA.json")])
     run_cmd([python, str(export), str(html_path), str(pdf_path)])

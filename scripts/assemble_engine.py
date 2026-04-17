@@ -369,18 +369,76 @@ def parse_recommendations(report_dir: str) -> list[dict[str, Any]]:
         content = read_file(rec_md)
         storyboard_items = parse_storyboard_markdown(content)
         if storyboard_items:
-            return storyboard_items
+            return apply_layout_overrides(storyboard_items, load_layout_overrides(report_dir))
 
     rec_json = os.path.join(report_dir, "RECOMMENDATIONS.json")
     if os.path.exists(rec_json):
         with open(rec_json, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return normalize_recommendation_payload(data)
+        return apply_layout_overrides(normalize_recommendation_payload(data), load_layout_overrides(report_dir))
 
     if os.path.exists(rec_md):
-        return parse_json_blocks_from_markdown(read_file(rec_md))
+        return apply_layout_overrides(parse_json_blocks_from_markdown(read_file(rec_md)), load_layout_overrides(report_dir))
 
     return []
+
+
+def load_layout_overrides(report_dir: str) -> dict[str, Any]:
+    path = os.path.join(report_dir, "LAYOUT_OVERRIDES.json")
+    if not os.path.exists(path):
+        return {}
+    try:
+        payload = json.loads(read_file(path))
+    except json.JSONDecodeError as exc:
+        print(f"[WARN] LAYOUT_OVERRIDES.json 解析失败：{exc}")
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def apply_layout_overrides(items: list[dict[str, Any]], payload: dict[str, Any]) -> list[dict[str, Any]]:
+    if not payload:
+        return items
+    by_chart = payload.get("by_chart_id", {})
+    by_group = payload.get("by_group", {})
+    if not isinstance(by_chart, dict):
+        by_chart = {}
+    if not isinstance(by_group, dict):
+        by_group = {}
+    allowed = {
+        "layout",
+        "size",
+        "page_role",
+        "keep_with_next",
+        "can_shrink",
+        "max_shrink_ratio",
+        "equal_height",
+        "row_align",
+        "print_compact",
+        "position",
+        "anchor_occurrence",
+    }
+    changed = 0
+    result: list[dict[str, Any]] = []
+    for item in items:
+        rec = dict(item)
+        chart_id = normalize_chart_id(rec.get("id"))
+        group = str(rec.get("group", "")).strip()
+        chart_patch = by_chart.get(chart_id, {}) if chart_id else {}
+        group_patch = by_group.get(group, {}) if group else {}
+        if isinstance(group_patch, dict):
+            for key, value in group_patch.items():
+                if key in allowed:
+                    rec[key] = value
+                    changed += 1
+        if isinstance(chart_patch, dict):
+            for key, value in chart_patch.items():
+                if key in allowed:
+                    rec[key] = value
+                    changed += 1
+        result.append(rec)
+    if changed:
+        print(f"[INFO] 应用布局覆盖项：{changed}")
+    return result
 
 
 def parse_storyboard_markdown(content: str) -> list[dict[str, Any]]:
@@ -704,8 +762,8 @@ def build_insertion_html(insertions: list[PlannedInsertion]) -> str:
 
 def row_should_equal_height(recs: list[dict[str, Any]]) -> bool:
     for rec in recs:
-        if parse_bool(rec.get("equal_height"), default=False):
-            return True
+        if "equal_height" in rec:
+            return parse_bool(rec.get("equal_height"), default=False)
         row_align = str(rec.get("row_align", "")).strip().lower()
         if row_align in ("stretch", "equal", "equal-height", "equal_height", "同高"):
             return True
@@ -796,6 +854,8 @@ def wrap_fragment(rec: dict[str, Any], fragment: str, nested: bool = False) -> s
     size = normalize_size(rec.get("size"))
     vtype = str(rec.get("type", "")).strip()
     classes = ["visual-block", f"visual-{layout}", f"visual-size-{size}"]
+    if parse_bool(rec.get("print_compact"), default=False):
+        classes.append("page-fit-compact")
     if nested:
         classes.append("visual-block-nested")
     attrs = [
@@ -807,6 +867,7 @@ def wrap_fragment(rec: dict[str, Any], fragment: str, nested: bool = False) -> s
         f'data-keep-with-next="{str(rec_keep_with_next(rec)).lower()}"',
         f'data-can-shrink="{str(rec_can_shrink(rec)).lower()}"',
         f'data-max-shrink-ratio="{rec_max_shrink_ratio(rec):.2f}"',
+        f'data-print-compact="{str(parse_bool(rec.get("print_compact"), default=False)).lower()}"',
     ]
     if vtype:
         attrs.append(f'data-visual-type="{html_lib.escape(vtype)}"')
@@ -835,26 +896,37 @@ def inject_charts_into_content(
 # ─── 配色系统 ───────────────────────────────────────────────────────────────
 
 PALETTE_MAP: dict[str, str] = {
-    "consulting-navy": "Consulting Navy",
-    "institutional-blue": "Institutional Blue",
-    "corporate-neutral": "Corporate Neutral",
-    "financial-trust": "Financial Trust",
-    "boardroom-green": "Boardroom Green",
-    "monochrome-executive": "Monochrome Executive",
+    "consulting-classic": "Consulting Classic",
+    "institutional-carbon": "Institutional Carbon",
+    "banker-monochrome": "Banker Monochrome",
+    "financial-blue": "Financial Blue",
+    "burgundy-editorial": "Burgundy Editorial",
     # Backward-compatible aliases for reports produced by older skill versions.
-    "mckinsey-blue": "Consulting Navy",
-    "modern-slate": "Institutional Blue",
-    "warm-clay": "Corporate Neutral",
-    "forest-green": "Boardroom Green",
-    "minimal-light": "Monochrome Executive",
+    "consulting-navy": "Consulting Classic",
+    "institutional-blue": "Institutional Carbon",
+    "corporate-neutral": "Financial Blue",
+    "financial-trust": "Financial Blue",
+    "boardroom-green": "Financial Blue",
+    "monochrome-executive": "Banker Monochrome",
+    "mckinsey-blue": "Consulting Classic",
+    "modern-slate": "Institutional Carbon",
+    "warm-clay": "Burgundy Editorial",
+    "forest-green": "Financial Blue",
+    "minimal-light": "Banker Monochrome",
 }
 
 PALETTE_ALIASES: dict[str, str] = {
-    "mckinsey-blue": "consulting-navy",
-    "modern-slate": "institutional-blue",
-    "warm-clay": "corporate-neutral",
-    "forest-green": "boardroom-green",
-    "minimal-light": "monochrome-executive",
+    "consulting-navy": "consulting-classic",
+    "institutional-blue": "institutional-carbon",
+    "corporate-neutral": "financial-blue",
+    "financial-trust": "financial-blue",
+    "boardroom-green": "financial-blue",
+    "monochrome-executive": "banker-monochrome",
+    "mckinsey-blue": "consulting-classic",
+    "modern-slate": "institutional-carbon",
+    "warm-clay": "burgundy-editorial",
+    "forest-green": "financial-blue",
+    "minimal-light": "banker-monochrome",
 }
 
 
@@ -871,18 +943,17 @@ def load_color_palette(skill_dir: str, color_scheme: str) -> str:
 
     # 调色板标题关键字（用于唯一定位章节）
     scheme_keys = {
-        "consulting-navy": "A. Consulting Navy",
-        "institutional-blue": "B. Institutional Blue",
-        "corporate-neutral": "C. Corporate Neutral",
-        "financial-trust": "D. Financial Trust",
-        "boardroom-green": "E. Boardroom Green",
-        "monochrome-executive": "F. Monochrome Executive",
+        "consulting-classic": "A. Consulting Classic",
+        "institutional-carbon": "B. Institutional Carbon",
+        "banker-monochrome": "C. Banker Monochrome",
+        "financial-blue": "D. Financial Blue",
+        "burgundy-editorial": "E. Burgundy Editorial",
     }
-    target = scheme_keys.get(normalized_scheme, "A. Consulting Navy")
+    target = scheme_keys.get(normalized_scheme, "A. Consulting Classic")
 
     # 匹配 "## {id}. {name} — ..." 到下一个 palette 标题之间的内容。
     pattern = re.compile(
-        r"(^## " + re.escape(target) + r" — .*?)\n(.*?)(?=^##\s+[A-F]\.|^## 旧方案兼容|^## 变量说明|\Z)",
+        r"(^## " + re.escape(target) + r" — .*?)\n(.*?)(?=^##\s+[A-E]\.|^## 旧方案兼容|^## 变量说明|\Z)",
         re.MULTILINE | re.DOTALL,
     )
     m = pattern.search(content)
@@ -917,7 +988,7 @@ def load_color_scheme_css(skill_dir: str, report_dir: str) -> str:
         print(f"[WARN] 读取 DESIGN_BRIEF.json 失败：{e}，使用默认配色")
         return ""
 
-    color_scheme = brief.get("color_scheme", "mckinsey-blue")
+    color_scheme = brief.get("color_scheme", "consulting-classic")
     print(f"[INFO] 配色方案：{color_scheme}")
     palette_css = load_color_palette(skill_dir, color_scheme)
     return palette_css + build_legacy_token_bridge(color_scheme)
@@ -961,7 +1032,7 @@ def build_legacy_token_bridge(color_scheme: str) -> str:
   --amber: var(--semantic-warning);
   --blue: var(--semantic-info);
   --graphite: var(--text-secondary);
-  --table-header-bg: var(--report-subtle-2);
+  --table-header-bg: var(--style-header-fill);
   --table-header-text: var(--text-primary);
   --shadow: 0 2px 12px rgba(17, 24, 39, 0.06);
 }

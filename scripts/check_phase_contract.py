@@ -47,6 +47,8 @@ def validate_design_brief_json(report_dir: Path) -> tuple[list[str], list[str]]:
 
     color_scheme = str(payload.get("color_scheme", "")).strip().lower()
     allowed = {
+        "consulting-classic", "institutional-carbon", "banker-monochrome",
+        "financial-blue", "burgundy-editorial",
         "consulting-navy", "institutional-blue", "corporate-neutral",
         "financial-trust", "boardroom-green", "monochrome-executive",
         "mckinsey-blue", "modern-slate", "warm-clay", "forest-green", "minimal-light",

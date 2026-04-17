@@ -8,7 +8,7 @@
   --report-bg: #ffffff;
   --report-surface: #ffffff;
   --report-subtle: #f7f8fa;
-  --report-subtle-2: #edf2f7;
+  --report-subtle-2: #eef2f7;
 
   --text-primary: #1a202c;
   --text-secondary: #4a5568;
@@ -34,6 +34,20 @@
   --chart-5: #276749;
   --chart-6: #c53030;
   --echarts-palette: #1f4e79, #0070d1, #718096, #b8860b, #276749, #c53030;
+
+  --style-title-rule-width: 3px;
+  --style-section-accent-width: 4px;
+  --style-card-radius: 6px;
+  --style-kpi-accent-width: 4px;
+  --style-panel-top-accent-width: 3px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: var(--report-subtle);
+  --style-risk-high-bg: #fff1ef;
+  --style-risk-mid-bg: #fff8e8;
+  --style-risk-low-bg: #eefaf4;
+  --style-risk-high-border: #f4b4aa;
+  --style-risk-mid-border: #f7d28a;
+  --style-risk-low-border: #a8dbc6;
 
   /* Compatibility aliases for existing templates and older fragments. */
   --color-primary: var(--chart-1);
@@ -65,7 +79,7 @@
   --amber: var(--semantic-warning);
   --blue: var(--semantic-info);
   --graphite: var(--text-secondary);
-  --table-header-bg: var(--report-subtle-2);
+  --table-header-bg: var(--style-header-fill);
   --table-header-text: var(--text-primary);
   --shadow: 0 2px 12px rgba(17, 24, 39, 0.06);
 }
@@ -109,7 +123,7 @@ body {
 }
 
 .report-cover h1 {
-  border-bottom: 3px solid var(--brand-dark);
+  border-bottom: var(--style-title-rule-width) solid var(--brand-dark);
   padding-bottom: 12px;
   margin-bottom: 22px;
 }
@@ -125,9 +139,9 @@ body {
   font-size: 13px;
   color: var(--muted);
   background: linear-gradient(90deg, var(--wash-2), var(--wash));
-  border-left: 4px solid var(--brand);
+  border-left: var(--style-section-accent-width) solid var(--brand);
   padding: 14px 18px;
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 var(--style-card-radius) var(--style-card-radius) 0;
 }
 
 .report-meta-key {
@@ -153,7 +167,7 @@ h4 {
 h1 {
   font-size: 25px;
   font-weight: 800;
-  border-bottom: 3px solid var(--brand-dark);
+  border-bottom: var(--style-title-rule-width) solid var(--brand-dark);
   padding-bottom: 12px;
   margin: 0 0 30px;
 }
@@ -162,7 +176,7 @@ h2 {
   font-size: 18px;
   font-weight: 800;
   padding-left: 12px;
-  border-left: 4px solid var(--brand);
+  border-left: var(--style-section-accent-width) solid var(--brand);
   margin: 38px 0 16px;
 }
 
@@ -207,7 +221,7 @@ li {
 blockquote {
   margin: 16px 0;
   padding: 9px 16px;
-  border-left: 4px solid var(--brand);
+  border-left: var(--style-section-accent-width) solid var(--brand);
   background: var(--wash);
   color: var(--muted);
   break-inside: avoid;
@@ -244,7 +258,7 @@ td {
 }
 
 tr:nth-child(even) td {
-  background: var(--report-subtle);
+  background: var(--style-table-stripe-fill);
 }
 
 tr:last-child td {
@@ -300,7 +314,7 @@ th:first-child {
 .consulting-figure {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   padding: 18px 22px;
   box-shadow: 0 1px 8px rgba(17, 24, 39, 0.06);
   overflow: hidden;
@@ -365,8 +379,8 @@ th:first-child {
 .kpi-card {
   background: #fff;
   border: 1px solid var(--line);
-  border-left: 4px solid var(--brand);
-  border-radius: 6px;
+  border-left: var(--style-kpi-accent-width) solid var(--brand);
+  border-radius: var(--style-card-radius);
   padding: 15px 17px;
 }
 
@@ -440,8 +454,8 @@ th:first-child {
 .framework-card,
 .scorecard-item {
   border: 1px solid var(--line);
-  border-top: 3px solid var(--brand);
-  border-radius: 6px;
+  border-top: var(--style-panel-top-accent-width) solid var(--brand);
+  border-radius: var(--style-card-radius);
   padding: 13px 15px;
   background: #fff;
 }
@@ -470,7 +484,7 @@ th:first-child {
   min-width: 38px;
   height: 24px;
   margin-bottom: 8px;
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: var(--brand-soft);
   color: var(--brand-dark);
   font-weight: 800;
@@ -481,7 +495,7 @@ th:first-child {
   display: grid;
   grid-template-columns: 1fr 1fr;
   border: 1px solid var(--line-strong);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   overflow: hidden;
   background: #fff;
 }
@@ -530,26 +544,26 @@ th:first-child {
   min-height: 76px;
   padding: 11px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: #fff;
 }
 
 .risk-cell.high,
 .heatmap-cell.high {
-  border-color: #f4b4aa;
-  background: #fff1ef;
+  border-color: var(--style-risk-high-border);
+  background: var(--style-risk-high-bg);
 }
 
 .risk-cell.mid,
 .heatmap-cell.mid {
-  border-color: #f7d28a;
-  background: #fff8e8;
+  border-color: var(--style-risk-mid-border);
+  background: var(--style-risk-mid-bg);
 }
 
 .risk-cell.low,
 .heatmap-cell.low {
-  border-color: #a8dbc6;
-  background: #eefaf4;
+  border-color: var(--style-risk-low-border);
+  background: var(--style-risk-low-bg);
 }
 
 .risk-title,
@@ -620,8 +634,8 @@ th:first-child {
 .chain-step {
   position: relative;
   border: 1px solid var(--line);
-  border-top: 3px solid var(--brand);
-  border-radius: 6px;
+  border-top: var(--style-panel-top-accent-width) solid var(--brand);
+  border-radius: var(--style-card-radius);
   padding: 12px 13px;
   background: #fff;
 }
@@ -651,7 +665,7 @@ th:first-child {
   justify-content: center;
   text-align: center;
   border: 2px solid var(--brand);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   padding: 16px;
   color: var(--brand-dark);
   font-weight: 800;
@@ -665,8 +679,8 @@ th:first-child {
 
 .driver-branch {
   border: 1px solid var(--line);
-  border-left: 4px solid var(--brand);
-  border-radius: 6px;
+  border-left: var(--style-kpi-accent-width) solid var(--brand);
+  border-radius: var(--style-card-radius);
   padding: 10px 12px;
   background: #fff;
 }
@@ -704,7 +718,7 @@ th:first-child {
 .range-track {
   position: relative;
   height: 18px;
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: #e8eef5;
   overflow: hidden;
 }
@@ -713,7 +727,7 @@ th:first-child {
   position: absolute;
   top: 0;
   bottom: 0;
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: var(--brand);
 }
 
@@ -747,7 +761,7 @@ th:first-child {
 
 .swimlane-label {
   padding: 9px 10px;
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: var(--brand-dark);
   color: #fff;
   font-size: 12px;
@@ -763,7 +777,7 @@ th:first-child {
 .swimlane-milestone {
   padding: 9px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   background: #fff;
   font-size: 11.5px;
   color: #475569;
@@ -777,7 +791,7 @@ th:first-child {
 
 .decision-node {
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--style-card-radius);
   padding: 11px 12px;
   background: #fff;
 }

@@ -200,49 +200,48 @@ pandoc {report.md} \
 - 叙事线：盈利拐点、估值修复、竞争风险、现金流纪律
 - 视觉密度：30-36 个组件
 - 类型组合：数据图 45%，结构图 35%，KPI/观点卡 20%
-- 调色板：**A. McKinsey Blue**（#1e3a5f 主色，适合严肃商务）
+- 调色板：**A. Consulting Classic**（深蓝+深金，适合严肃商务交付）
 ```
 
 #### 配色选择步骤（Phase 2 末尾执行）
 
-读取 `references/color-palettes.md`，根据报告内容/行业/语气，从 6 个白底正式报告调色板中选择最合适的 3 个呈现给用户。
+读取 `references/color-palettes.md`，根据报告内容/行业/语气，从 5 个白底正式报告视觉系统中选择最合适的 3 个呈现给用户。
 
 **硬约束：** 本 skill 面向正式报告，不面向网页换肤。候选 palette 必须保持白色页面底板，配色只影响标题点缀、表格线、关键数字、图表系列色和语义状态。禁止推荐深色底、大面积品牌色底、渐变底或营销页式 palette。
 
 **路由参考：**
-- 战略研究/投资判断/咨询交付 → **A. Consulting Navy** (`consulting-navy`)
-- 企业级/机构级/技术平台报告 → **B. Institutional Blue** (`institutional-blue`)
-- 通用商务/内部汇报/培训材料 → **C. Corporate Neutral** (`corporate-neutral`)
-- 金融/订阅/收入模型/ARPU → **D. Financial Trust** (`financial-trust`)
-- 增长机会/长期战略/经营改善 → **E. Boardroom Green** (`boardroom-green`)
-- 文字密集/董事会摘要/低装饰报告 → **F. Monochrome Executive** (`monochrome-executive`)
+- 战略研究/投资判断/咨询交付 → **A. Consulting Classic** (`consulting-classic`)
+- 企业级/机构级/技术平台报告 → **B. Institutional Carbon** (`institutional-carbon`)
+- 董事会摘要/文字密集/财务页 → **C. Banker Monochrome** (`banker-monochrome`)
+- 金融/订阅/收入模型/ARPU → **D. Financial Blue** (`financial-blue`)
+- 消费品牌/战略评论/高层叙事页 → **E. Burgundy Editorial** (`burgundy-editorial`)
 
 呈现格式：
 
 ```
 配色候选（请选一个，或告诉我要调整）：
 
-[A] Consulting Navy — 白底+深蓝+深金，适合咨询/投行正式交付
-[B] Institutional Blue — 白底+企业蓝+石墨灰，适合技术平台/机构报告
-[D] Financial Trust — 白底+金融蓝+语义红绿，适合收入模型/订阅业务
+[A] Consulting Classic — 深蓝+深金，咨询交付密度
+[B] Institutional Carbon — 企业蓝+冷灰，系统化机构风
+[D] Financial Blue — 信任蓝+语义红绿，适合收入模型/订阅业务
 
 当前默认：[A]
 ```
 
-用户回复编号（A/B/C/D/E/F）或直接给方向词。选完后，在 `DESIGN_BRIEF.md` 末尾写入：
+用户回复编号（A/B/C/D/E）或直接给方向词。选完后，在 `DESIGN_BRIEF.md` 末尾写入：
 
 ```markdown
-- 调色板：A. Consulting Navy
+- 调色板：A. Consulting Classic
 ```
 
 并在 `DESIGN_BRIEF.json` 中写入对应字段：
 
 ```json
 {
-  "color_scheme": "consulting-navy",
+  "color_scheme": "consulting-classic",
   "color_confirmed": true,
   "color_selected_by": "user",
-  "color_candidates": ["consulting-navy", "institutional-blue", "financial-trust"]
+  "color_candidates": ["consulting-classic", "institutional-carbon", "financial-blue"]
 }
 ```
 

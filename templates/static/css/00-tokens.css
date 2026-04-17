@@ -2,7 +2,7 @@
   --report-bg: #ffffff;
   --report-surface: #ffffff;
   --report-subtle: #f7f8fa;
-  --report-subtle-2: #edf2f7;
+  --report-subtle-2: #eef2f7;
 
   --text-primary: #1a202c;
   --text-secondary: #4a5568;
@@ -28,6 +28,20 @@
   --chart-5: #276749;
   --chart-6: #c53030;
   --echarts-palette: #1f4e79, #0070d1, #718096, #b8860b, #276749, #c53030;
+
+  --style-title-rule-width: 3px;
+  --style-section-accent-width: 4px;
+  --style-card-radius: 6px;
+  --style-kpi-accent-width: 4px;
+  --style-panel-top-accent-width: 3px;
+  --style-header-fill: var(--report-subtle-2);
+  --style-table-stripe-fill: var(--report-subtle);
+  --style-risk-high-bg: #fff1ef;
+  --style-risk-mid-bg: #fff8e8;
+  --style-risk-low-bg: #eefaf4;
+  --style-risk-high-border: #f4b4aa;
+  --style-risk-mid-border: #f7d28a;
+  --style-risk-low-border: #a8dbc6;
 
   /* Compatibility aliases for existing templates and older fragments. */
   --color-primary: var(--chart-1);
@@ -59,7 +73,7 @@
   --amber: var(--semantic-warning);
   --blue: var(--semantic-info);
   --graphite: var(--text-secondary);
-  --table-header-bg: var(--report-subtle-2);
+  --table-header-bg: var(--style-header-fill);
   --table-header-text: var(--text-primary);
   --shadow: 0 2px 12px rgba(17, 24, 39, 0.06);
 }
