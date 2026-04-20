@@ -70,15 +70,21 @@
 
 .visual-row .chart-container,
 .visual-row .consulting-figure,
-.visual-row .kpi-block {
+.visual-row .kpi-block,
+.visual-row .kpi-strip {
   height: auto;
+}
+
+.visual-row-equal .consulting-figure table {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .visual-row-equal {
   align-items: stretch;
-  --visual-header-min: 48px;
+  --visual-header-min: 56px;
   --visual-note-min: 24px;
-  --visual-body-min: 168px;
+  --visual-body-min: 152px;
   --visual-footer-min: 0px;
 }
 
@@ -108,6 +114,19 @@
 .visual-row-equal .figure-header {
   min-height: var(--visual-header-min);
   flex: 0 0 auto;
+}
+
+.visual-row-equal .chart-container > .chart-title:first-child,
+.visual-row-equal .consulting-figure > .figure-title:first-child {
+  min-height: var(--visual-header-min);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.visual-row-equal .chart-container > .chart-kicker:first-child + .chart-title,
+.visual-row-equal .consulting-figure > .figure-kicker:first-child + .figure-title {
+  min-height: calc(var(--visual-header-min) - 14px);
+  display: block;
 }
 
 .visual-row-equal .chart-annotation,
@@ -158,6 +177,7 @@
 }
 
 .visual-row-equal .visual-size-small .kpi-block,
+.visual-row-equal .visual-size-small .kpi-strip,
 .visual-row-equal .visual-size-small .insight-grid,
 .visual-row-equal .visual-size-small .framework-grid,
 .visual-row-equal .visual-size-small .scorecard-grid,
@@ -176,13 +196,29 @@
 }
 
 .visual-row-equal .visual-size-small .kpi-block {
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5px;
-  height: var(--equal-visual-body-height);
+  height: auto;
+  min-height: var(--equal-visual-body-height);
   align-content: stretch;
   align-items: start;
-  grid-auto-rows: minmax(0, 1fr);
+  grid-auto-rows: minmax(0, auto);
   margin-bottom: 0;
+}
+
+.visual-row-equal .visual-size-small .kpi-strip {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  height: auto !important;
+  min-height: var(--equal-visual-body-height);
+  align-content: stretch;
+  align-items: start;
+  grid-auto-rows: minmax(0, auto);
+  margin: 0;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
 }
 
 .visual-row-equal .visual-size-small .kpi-card {
@@ -191,6 +227,10 @@
 }
 
 .visual-row-equal .visual-size-small .kpi-block .kpi-card:nth-child(3):last-child {
+  grid-column: 1 / -1;
+}
+
+.visual-row-equal .visual-size-small .kpi-strip .kpi-card:nth-child(3):last-child {
   grid-column: 1 / -1;
 }
 
@@ -217,4 +257,3 @@
   padding-top: 8px;
   min-height: var(--visual-footer-min);
 }
-

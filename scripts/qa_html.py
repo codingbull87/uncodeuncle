@@ -9,14 +9,19 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import html as html_lib
 import json
 import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
-from assemble_engine import normalize_chart_id, normalize_layout, parse_recommendations
+from export_pdf import candidate_browsers
 from lint_fragments import ECHARTS_CSS_VAR_STRING, classes_in
+from report_contract import normalize_chart_id, normalize_layout
+from recommendation_state import parse_recommendations
 
 
 DOC_ALLOWED_CLASSES = {
@@ -49,6 +54,153 @@ DOC_ALLOWED_CLASSES = {
     "pdf-export-mode",
     "charts-ready",
 }
+
+RENDER_QA_SCHEMA = "report-illustrator-render-qa:v1"
+
+
+RENDER_QA_SCRIPT = r"""
+<script id="ri-render-qa-script">
+(function () {
+  function colCount(el) {
+    var tpl = window.getComputedStyle(el).gridTemplateColumns || '';
+    if (!tpl || tpl === 'none') return 0;
+    return tpl.split(/\s+/).filter(function (token) {
+      return token && token !== '/';
+    }).length;
+  }
+
+  function localTop(target, base) {
+    var top = 0;
+    var node = target;
+    while (node && node !== base) {
+      top += node.offsetTop || 0;
+      node = node.offsetParent;
+    }
+    return top;
+  }
+
+  function firstBodyNode(container) {
+    var selectors = [
+      '[id^="chart-C"]',
+      '.kpi-block,.kpi-strip,.insight-grid,.framework-grid,.scorecard-grid',
+      '.matrix-2x2,.risk-matrix,.heatmap-grid,.timeline,.value-chain,.process-chain',
+      '.swimlane-roadmap,.driver-tree,.decision-tree,.range-band,.football-field',
+      'table'
+    ];
+    for (var i = 0; i < selectors.length; i += 1) {
+      var node = container.querySelector(selectors[i]);
+      if (node) return node;
+    }
+    return null;
+  }
+
+  function cappedPush(target, item, limit) {
+    if (target.length < limit) target.push(item);
+  }
+
+  function severeTailImbalance(childCount, columns) {
+    if (columns <= 1 || childCount <= columns) return false;
+    var remainder = childCount % columns;
+    if (remainder === 0) return false;
+    return remainder === 1;
+  }
+
+  function hasIntentionalFullSpanTail(grid, children, columns) {
+    if (columns !== 2 || children.length !== 3) return false;
+    var last = children[children.length - 1];
+    var style = window.getComputedStyle(last);
+    var start = style.gridColumnStart || '';
+    var end = style.gridColumnEnd || '';
+    if (end === '-1') return true;
+    if (/span\s+2/.test(end)) return true;
+    var startNum = parseInt(start, 10);
+    var endNum = parseInt(end, 10);
+    return !isNaN(startNum) && !isNaN(endNum) && (endNum - startNum) >= 2;
+  }
+
+  var symmetryIssues = [];
+  document.querySelectorAll('.kpi-block,.kpi-strip,.insight-grid,.framework-grid,.scorecard-grid,.swimlane-track,.value-chain,.process-chain,.risk-matrix,.heatmap-grid,.decision-tree').forEach(function (grid) {
+    var children = Array.prototype.filter.call(grid.children || [], function (node) {
+      return node.nodeType === 1;
+    });
+    var childCount = children.length;
+    var columns = colCount(grid);
+    if (hasIntentionalFullSpanTail(grid, children, columns)) return;
+    if (severeTailImbalance(childCount, columns)) {
+      cappedPush(symmetryIssues, {
+        className: grid.className || '',
+        childCount: childCount,
+        columns: columns,
+        remainder: childCount % columns
+      }, 50);
+    }
+  });
+
+  var alignmentIssues = [];
+  document.querySelectorAll('.visual-row.visual-row-equal').forEach(function (row) {
+    var blocks = row.querySelectorAll(':scope > .visual-block, :scope > .visual-block-nested');
+    if (!blocks || blocks.length < 2) return;
+    var containers = [];
+    Array.prototype.forEach.call(blocks, function (block) {
+      var container = block.querySelector(':scope > .chart-container, :scope > .consulting-figure');
+      if (container) containers.push(container);
+    });
+    if (containers.length < 2) return;
+    var bodyA = firstBodyNode(containers[0]);
+    var bodyB = firstBodyNode(containers[1]);
+    if (!bodyA || !bodyB) return;
+    var delta = Math.abs(localTop(bodyA, row) - localTop(bodyB, row));
+    if (delta > 6) {
+      cappedPush(alignmentIssues, {
+        group: row.getAttribute('data-group') || '',
+        rowLayout: row.getAttribute('data-row-layout') || '',
+        baselineDeltaPx: Math.round(delta)
+      }, 50);
+    }
+  });
+
+  var overflowIssues = [];
+  var overflowSelectors = [
+    '.kpi-card',
+    '.insight-card',
+    '.framework-card',
+    '.scorecard-item',
+    '.matrix-cell',
+    '.risk-cell',
+    '.heatmap-cell',
+    '.swimlane-milestone',
+    '.decision-node',
+    '.chain-step',
+    '.timeline-title,.timeline-body,.driver-title,.driver-body',
+    '.range-label,.range-value,.swimlane-label',
+    '.lollipop-label,.lollipop-value',
+    '.figure-title,.chart-title',
+    '.figure-src,.chart-src,.component-src',
+    'td,th'
+  ].join(',');
+  document.querySelectorAll(overflowSelectors).forEach(function (el) {
+    var overflowY = el.scrollHeight - el.clientHeight;
+    var overflowX = el.scrollWidth - el.clientWidth;
+    if (overflowY > 2 || overflowX > 2) {
+      cappedPush(overflowIssues, {
+        className: el.className || el.tagName.toLowerCase(),
+        overflowY: Math.round(Math.max(0, overflowY)),
+        overflowX: Math.round(Math.max(0, overflowX)),
+        text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 96)
+      }, 80);
+    }
+  });
+
+  document.body.innerHTML = '<pre id="ri-render-qa-json"></pre>';
+  document.getElementById('ri-render-qa-json').textContent = JSON.stringify({
+    schema: 'report-illustrator-render-qa:v1',
+    symmetryIssues: symmetryIssues,
+    alignmentIssues: alignmentIssues,
+    overflowIssues: overflowIssues
+  });
+})();
+</script>
+""".strip()
 
 
 def read_text(path: Path) -> str:
@@ -119,11 +271,75 @@ def check_report_surface_tokens(html: str) -> list[str]:
     return errors
 
 
+def run_dump_dom(path: Path, timeout_seconds: int = 20) -> str:
+    browsers = candidate_browsers()
+    if not browsers:
+        raise RuntimeError("未找到 Chrome/Chromium/Edge，无法执行真实渲染 QA")
+    browser = browsers[0]
+    uri = path.resolve().as_uri()
+    cmd = [
+        browser,
+        "--headless=new",
+        "--disable-gpu",
+        "--disable-background-networking",
+        "--disable-extensions",
+        "--disable-sync",
+        "--disable-dev-shm-usage",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--virtual-time-budget=5000",
+        "--dump-dom",
+        uri,
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_seconds)
+    if proc.returncode != 0:
+        cmd[1] = "--headless"
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_seconds)
+    if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()
+        raise RuntimeError(f"dump-dom 失败，rc={proc.returncode} stderr={stderr}")
+    return proc.stdout
+
+
+def run_render_qa(html_path: Path) -> dict[str, Any]:
+    source = read_text(html_path)
+    payload_html = source
+    if "</body>" in payload_html:
+        payload_html = payload_html.replace("</body>", "\n" + RENDER_QA_SCRIPT + "\n</body>")
+    else:
+        payload_html += "\n" + RENDER_QA_SCRIPT + "\n"
+
+    with tempfile.TemporaryDirectory(prefix="report-render-qa-") as temp_dir:
+        temp_html = Path(temp_dir) / "render_qa.html"
+        temp_html.write_text(payload_html, encoding="utf-8")
+        dom = run_dump_dom(temp_html)
+
+    matches = re.findall(r'<pre id="ri-render-qa-json">(.*?)</pre>', dom, flags=re.DOTALL)
+    if not matches:
+        raise RuntimeError("真实渲染 QA 输出缺少 ri-render-qa-json")
+    raw = ""
+    for candidate in reversed(matches):
+        text = html_lib.unescape(candidate.strip())
+        if text:
+            raw = text
+            break
+    if not raw:
+        raise RuntimeError("真实渲染 QA 输出为空")
+    parsed = json.loads(raw)
+    if not isinstance(parsed, dict) or parsed.get("schema") != RENDER_QA_SCHEMA:
+        raise RuntimeError("真实渲染 QA 输出 schema 非法")
+    return parsed
+
+
 def run_qa(report_dir: Path, html_path: Path) -> tuple[list[str], list[str], dict[str, Any]]:
     errors: list[str] = []
     warnings: list[str] = []
     html = read_text(html_path)
-    recommendations = parse_recommendations(str(report_dir))
+    recommendations = parse_recommendations(
+        str(report_dir),
+        normalize_chart_id=normalize_chart_id,
+        read_file=lambda path: Path(path).read_text(encoding="utf-8", errors="ignore"),
+    )
 
     if not re.search(r'<section\b[^>]*class=["\'][^"\']*\breport-cover\b', html, flags=re.IGNORECASE):
         warnings.append("未检测到 .report-cover")
@@ -132,6 +348,10 @@ def run_qa(report_dir: Path, html_path: Path) -> tuple[list[str], list[str], dic
         errors.append(".report-cover 内部包含 visual-block")
     if re.search(r"<p>\s*<(?:div|script|table|svg)", html, flags=re.IGNORECASE):
         errors.append("存在 <p> 包裹块级元素的非法嵌套")
+    for body in re.findall(r"<blockquote\b[^>]*>(.*?)</blockquote>", html, flags=re.IGNORECASE | re.DOTALL):
+        if re.search(r"<div\b[^>]*class=[\"'][^\"']*\bvisual-block\b", body, flags=re.IGNORECASE):
+            errors.append("存在 visual-block 被注入到 blockquote 内部")
+            break
     if re.search(r"html2canvas|jspdf|downloadChart", html, flags=re.IGNORECASE):
         errors.append("存在截图式 PDF 或下载残留逻辑")
 
@@ -155,6 +375,34 @@ def run_qa(report_dir: Path, html_path: Path) -> tuple[list[str], list[str], dic
 
     errors.extend(check_report_surface_tokens(html))
 
+    render_details: dict[str, Any] = {}
+    try:
+        render_details = run_render_qa(html_path)
+    except Exception as exc:  # pragma: no cover - environment-dependent browser probe
+        warnings.append(f"真实渲染 QA 未执行：{exc}")
+    else:
+        symmetry_issues = render_details.get("symmetryIssues", []) or []
+        alignment_issues = render_details.get("alignmentIssues", []) or []
+        overflow_issues = render_details.get("overflowIssues", []) or []
+        if symmetry_issues:
+            preview = ", ".join(
+                f"{item.get('className', '')}({item.get('columns')}列/{item.get('childCount')}项/余{item.get('remainder')})"
+                for item in symmetry_issues[:6]
+            )
+            errors.append(f"检测到网格重度不均衡（尾行仅 1 项）：{preview}")
+        if alignment_issues:
+            preview = ", ".join(
+                f"group={item.get('group') or '<none>'} delta={item.get('baselineDeltaPx')}px"
+                for item in alignment_issues[:6]
+            )
+            errors.append(f"检测到并排组件标题/正文基线错位：{preview}")
+        if overflow_issues:
+            preview = ", ".join(
+                f"{item.get('className', '')}(+{item.get('overflowY', 0)}y/+{item.get('overflowX', 0)}x)"
+                for item in overflow_issues[:8]
+            )
+            errors.append(f"检测到文本容器真实溢出：{preview}")
+
     unknown_classes = sorted(cls for cls in classes_in(html) if cls not in DOC_ALLOWED_CLASSES)
     # Fragment classes are validated by lint_fragments; here only catch known generator drift classes.
     bad_generator_classes = [cls for cls in unknown_classes if cls in {"tree-level", "tree-node", "high-impact", "medium-impact", "low-impact", "high-probability", "medium-probability", "low-probability"}]
@@ -170,6 +418,7 @@ def run_qa(report_dir: Path, html_path: Path) -> tuple[list[str], list[str], dic
         "visual_rows": visual_rows,
         "expected_groups": expected_groups,
         "actual_groups": actual_groups,
+        "render_qa": render_details,
         "errors": errors,
         "warnings": warnings
     }

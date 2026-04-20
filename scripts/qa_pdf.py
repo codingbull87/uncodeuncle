@@ -1,77 +1,135 @@
 #!/usr/bin/env python3
 """
-QA print-layout quality from actual PDF page placement.
+QA the actual exported PDF artifact.
 
 Usage:
-  python3 scripts/qa_pdf.py <html_path> [qa_json_path]
+  python3 scripts/qa_pdf.py <pdf_path> [qa_json_path]
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
-
-from layout_probe import build_probe_payload
-
-
-WARNING_BLANK_RATIO = 0.38
-ERROR_BLANK_RATIO = 0.68
-LAST_PAGE_WARNING_RATIO = 0.55
+from typing import Any
 
 
-def evaluate(result: dict) -> tuple[list[str], list[str]]:
+def normalize_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value or "").strip()
+
+
+def load_pdf_pages(pdf_path: Path) -> list[dict[str, Any]]:
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:
+        raise SystemExit("[ERROR] qa_pdf.py 需要 pypdf") from exc
+
+    try:
+        reader = PdfReader(str(pdf_path))
+    except Exception as exc:
+        raise SystemExit(f"[ERROR] PDF 解析失败：{exc}") from exc
+
+    pages: list[dict[str, Any]] = []
+    for index, page in enumerate(reader.pages, start=1):
+        text = normalize_text(page.extract_text() or "")
+        mediabox = page.mediabox
+        width = float(mediabox.width)
+        height = float(mediabox.height)
+        pages.append(
+            {
+                "page": index,
+                "widthPt": round(width, 2),
+                "heightPt": round(height, 2),
+                "rotation": int(page.get("/Rotate", 0) or 0),
+                "textChars": len(re.sub(r"\s+", "", text)),
+                "textPreview": text[:240],
+            }
+        )
+    return pages
+
+
+def evaluate_pages(pages: list[dict[str, Any]], pdf_path: Path) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
-    pages = result.get("pages", [])
     if not pages:
-        errors.append("未检测到任何页面内容")
+        errors.append("未检测到任何 PDF 页面")
         return errors, warnings
 
-    last_page = max(int(page.get("page", 0)) for page in pages)
-    for page in pages:
-        index = int(page.get("page", 0))
-        blank_ratio = float(page.get("blankRatio", 0))
-        blocks = int(page.get("blockCount", 0))
-        visual_blocks = int(page.get("visualBlocks", 0))
-        if index == last_page:
-            if blank_ratio > LAST_PAGE_WARNING_RATIO and blocks <= 4:
-                warnings.append(f"第 {index} 页内容偏少，页底空白约 {blank_ratio:.0%}")
-            continue
-        if blank_ratio > ERROR_BLANK_RATIO:
-            errors.append(f"第 {index} 页页底空白过大，约 {blank_ratio:.0%}")
-        elif blank_ratio > WARNING_BLANK_RATIO:
-            warnings.append(f"第 {index} 页页底空白偏大，约 {blank_ratio:.0%}")
-        if visual_blocks == 1 and blocks <= 3 and blank_ratio > 0.35:
-            warnings.append(f"第 {index} 页疑似单视觉块低密度页")
+    width_values = {page["widthPt"] for page in pages}
+    height_values = {page["heightPt"] for page in pages}
+    if len(width_values) > 1 or len(height_values) > 1:
+        warnings.append("PDF 页面尺寸不一致；可能存在异常分页或导出配置漂移")
 
-    missing_markers = result.get("missingMarkers", []) or []
-    if missing_markers:
-        warnings.append(f"有 {len(missing_markers)} 个 block 未能完成 PDF marker 映射")
+    for page in pages:
+        index = int(page["page"])
+        text_chars = int(page["textChars"])
+        if page["widthPt"] <= 0 or page["heightPt"] <= 0:
+            errors.append(f"第 {index} 页尺寸非法")
+        if page["rotation"] not in {0, 90, 180, 270}:
+            warnings.append(f"第 {index} 页旋转角异常：{page['rotation']}")
+        if text_chars == 0:
+            warnings.append(f"第 {index} 页未提取到任何文本")
+
+    diagnostics_path = pdf_path.parent / "EXPORT_DIAGNOSTICS.json"
+    if diagnostics_path.exists():
+        try:
+            diagnostics = json.loads(diagnostics_path.read_text(encoding="utf-8", errors="ignore"))
+        except json.JSONDecodeError:
+            diagnostics = {}
+        expected_page_count = diagnostics.get("page_count")
+        if isinstance(expected_page_count, int) and expected_page_count > 0 and expected_page_count != len(pages):
+            errors.append(
+                f"实际 PDF 页数与 EXPORT_DIAGNOSTICS.json 不一致：actual={len(pages)} expected={expected_page_count}"
+            )
+
+    layout_path = pdf_path.parent / "LAYOUT_DIAGNOSIS.json"
+    if layout_path.exists():
+        try:
+            layout_payload = json.loads(layout_path.read_text(encoding="utf-8", errors="ignore"))
+        except json.JSONDecodeError:
+            layout_payload = {}
+        layout_summary = layout_payload.get("summary", {}) if isinstance(layout_payload, dict) else {}
+        expected_layout_pages = layout_summary.get("pageCount") or layout_summary.get("totalPages")
+        if isinstance(expected_layout_pages, int) and expected_layout_pages > 0 and expected_layout_pages != len(pages):
+            errors.append(
+                f"实际 PDF 页数与 LAYOUT_DIAGNOSIS.json 不一致：actual={len(pages)} expected={expected_layout_pages}"
+            )
     return errors, warnings
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description="QA PDF print layout from assembled HTML")
-    parser.add_argument("html_path", help="Assembled report HTML path")
+    parser = argparse.ArgumentParser(description="QA actual exported PDF artifact")
+    parser.add_argument("pdf_path", help="Exported PDF path")
     parser.add_argument("qa_json_path", nargs="?", help="Optional QA JSON output path")
     args = parser.parse_args(argv[1:])
 
-    html_path = Path(args.html_path).expanduser().resolve()
-    if not html_path.exists():
-        print(f"[ERROR] 找不到 HTML 文件：{html_path}")
+    pdf_path = Path(args.pdf_path).expanduser().resolve()
+    if not pdf_path.exists():
+        print(f"[ERROR] 找不到 PDF 文件：{pdf_path}")
         return 1
 
-    result = build_probe_payload(html_path)
-    errors, warnings = evaluate(result)
-    result["errors"] = errors
-    result["warnings"] = warnings
+    if pdf_path.stat().st_size <= 0:
+        print(f"[ERROR] PDF 文件为空：{pdf_path}")
+        return 1
 
-    qa_json_path = Path(args.qa_json_path).expanduser().resolve() if args.qa_json_path else html_path.with_name("PDF_QA.json")
-    qa_json_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    pages = load_pdf_pages(pdf_path)
+    errors, warnings = evaluate_pages(pages, pdf_path)
+    payload = {
+        "schema": "report-illustrator-pdf-qa:v1",
+        "pdfPath": str(pdf_path),
+        "pageCount": len(pages),
+        "pass": not errors,
+        "pages": pages,
+        "errors": errors,
+        "warnings": warnings,
+    }
 
-    print(f"[PDF_QA] html={html_path}")
+    qa_json_path = Path(args.qa_json_path).expanduser().resolve() if args.qa_json_path else pdf_path.with_name("PDF_QA.json")
+    qa_json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    print(f"[PDF_QA] pdf={pdf_path}")
     print(f"[PDF_QA] output={qa_json_path}")
     for item in warnings:
         print(f"[WARN] {item}")

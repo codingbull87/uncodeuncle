@@ -152,6 +152,7 @@ table {
   border-collapse: collapse;
   margin: 16px 0;
   font-size: 12.5px;
+  table-layout: auto;
 }
 
 th {
@@ -160,7 +161,9 @@ th {
   padding: 8px 12px;
   text-align: left;
   font-weight: 800;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 td {
@@ -168,6 +171,8 @@ td {
   border-bottom: 1px solid var(--line);
   color: #374151;
   vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 tr:nth-child(even) td {
@@ -180,7 +185,12 @@ tr:last-child td {
 
 td:first-child,
 th:first-child {
-  white-space: nowrap;
+  white-space: normal;
+}
+
+.consulting-figure table,
+.chart-container table {
+  table-layout: fixed;
 }
 
 .green {

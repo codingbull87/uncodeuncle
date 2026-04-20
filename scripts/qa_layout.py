@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from layout_probe import build_probe_payload
+from report_contract import heading_level, is_heading_tag
 
 
 LOW_INFO_TYPES = {
@@ -130,7 +131,7 @@ def has_following_text_after_visual(page_blocks: list[dict[str, Any]], visual: d
         if dom_index <= visual_index:
             continue
         tag = str(block.get("tag", "")).strip().lower()
-        if tag in {"h1", "h2", "h3"}:
+        if is_heading_tag(tag):
             return after
         if str(block.get("kind", "")) == "text" and tag in {"p", "ul", "ol", "table", "blockquote"}:
             after = True
@@ -148,7 +149,12 @@ def diagnose(payload: dict[str, Any]) -> dict[str, Any]:
     for page in pages:
         index = int(page.get("page", 0))
         blank_ratio = float(page.get("blankRatio", 0))
-        if index == last_page or blank_ratio <= 0.38:
+        if index == last_page or blank_ratio <= 0.50:
+            continue
+        # Some Chromium dumps may carry script text in PDF extraction while
+        # yielding zero mapped layout blocks on that page. Treat these as probe
+        # artifacts instead of actionable sparse pages.
+        if int(page.get("blockCount", 0) or 0) == 0:
             continue
 
         current_blocks = blocks_on_page(blocks, index)
@@ -165,9 +171,12 @@ def diagnose(payload: dict[str, Any]) -> dict[str, Any]:
         suggestions: list[dict[str, Any]] = []
         reason_parts: list[str] = []
 
-        if next_first_block and str(next_first_block.get("tag", "")).lower() in {"h2", "h3"} and local_top(next_first_block, index + 1) <= 90:
+        next_heading_level = heading_level(next_first_block.get("tag", "")) if next_first_block else None
+        trailing_heading_level = heading_level(trailing_block.get("tag", "")) if trailing_block else None
+
+        if next_heading_level is not None and next_heading_level >= 2 and local_top(next_first_block, index + 1) <= 90:
             reason_parts.append("next page begins with heading")
-        if trailing_block and str(trailing_block.get("tag", "")).lower() in {"h2", "h3"}:
+        if trailing_heading_level is not None and trailing_heading_level >= 2:
             reason_parts.append("current page ends on heading")
 
         if trailing_page_visual:
@@ -210,6 +219,11 @@ def diagnose(payload: dict[str, Any]) -> dict[str, Any]:
         if trailing_page_visual and str(trailing_page_visual.get("visualType", "")).strip().lower() in LOW_INFO_TYPES:
             reason_parts.append("trailing visual is low-info figure")
 
+        # Text-only sparse pages without actionable visual moves are common in
+        # long reports and should be warnings, not hard blockers.
+        if not suggestions and trailing_page_visual is None and next_first_visual is None:
+            continue
+
         sparse_pages.append({
             "page": index,
             "blankRatio": blank_ratio,
@@ -248,6 +262,13 @@ def diagnose(payload: dict[str, Any]) -> dict[str, Any]:
                     })
                     if str(prev_trailing_visual.get("visualType", "")).strip().lower() in LOW_INFO_TYPES:
                         reason_parts.append("previous trailing visual is low-info")
+                        suggestions.append({
+                            "action": "move_trailing_visual_to_section_end",
+                            "target_block_id": prev_trailing_visual.get("blockId", ""),
+                            "target_chart_id": prev_trailing_visual.get("chartId", ""),
+                            "target_member_chart_ids": prev_trailing_visual.get("memberChartIds", []),
+                            "reason": "low-info trailing visual can move after terminal text to backfill the last page",
+                        })
                 terminal_sparse_pages.append({
                     "page": last_page,
                     "blankRatio": last_blank,
@@ -263,10 +284,12 @@ def diagnose(payload: dict[str, Any]) -> dict[str, Any]:
 
     payload["blocks"] = blocks
     payload["pages"] = pages
+    payload["pageCount"] = len(pages)
     payload["sparsePages"] = sparse_pages
     payload["terminalSparsePages"] = terminal_sparse_pages
     payload["summary"] = {
         "totalPages": len(pages),
+        "pageCount": len(pages),
         "sparsePages": len(sparse_pages),
         "terminalSparsePages": len(terminal_sparse_pages),
         "maxBlankRatio": max((float(page.get("blankRatio", 0)) for page in pages), default=0.0),

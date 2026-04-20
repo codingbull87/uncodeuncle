@@ -20,15 +20,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from assemble_engine import (
-    apply_layout_overrides,
-    normalize_chart_id,
-    normalize_layout,
-    normalize_size,
-    parse_recommendations,
-    parse_recommendations_base,
-    visual_type,
-)
+from recommendation_loader import parse_recommendations_base
+from recommendation_state import apply_layout_overrides
+from report_contract import normalize_chart_id, normalize_layout, normalize_size, visual_type
 
 
 LOW_INFO_TYPES = {
@@ -63,6 +57,7 @@ PATCH_FIELDS = {
     "row_title",
     "group_title",
     "group_anchor",
+    "row_anchor",
     "anchor",
     "anchor_occurrence",
 }
@@ -89,19 +84,30 @@ def compact_state(rec: dict[str, Any]) -> int:
 
 def normalize_targets(item: dict[str, Any]) -> list[str]:
     targets: list[str] = []
-    chart_id = normalize_chart_id(item.get("target_chart_id"))
+    chart_id = normalize_chart_id(item.get("target_chart_id") or item.get("chartId"))
     if chart_id:
         targets.append(chart_id)
-    for raw in item.get("target_member_chart_ids", []) or []:
+    raw_members = item.get("target_member_chart_ids", []) or item.get("memberChartIds", []) or []
+    for raw in raw_members:
         cid = normalize_chart_id(raw)
         if cid and cid not in targets:
             targets.append(cid)
     return targets
 
 
+def heading_anchor_text(block: dict[str, Any] | None) -> str:
+    if not isinstance(block, dict):
+        return ""
+    tag = str(block.get("tag") or "").strip().lower()
+    text = str(block.get("text") or "").strip()
+    if len(tag) == 2 and tag.startswith("h") and tag[1].isdigit() and text:
+        return text
+    return ""
+
+
 def current_effective_recommendations(report_dir: Path, current_payload: dict[str, Any]) -> list[dict[str, Any]]:
     raw_items = parse_recommendations_base(str(report_dir))
-    return apply_layout_overrides(raw_items, current_payload)
+    return apply_layout_overrides(raw_items, current_payload, normalize_chart_id=normalize_chart_id)
 
 
 def apply_compact_mutation(rec: dict[str, Any]) -> None:
@@ -143,6 +149,11 @@ def apply_split_row_mutation(rec: dict[str, Any]) -> None:
     rec["keep_with_next"] = False
 
 
+def restore_raw_fields(rec: dict[str, Any], raw_rec: dict[str, Any]) -> None:
+    for field in PATCH_FIELDS:
+        rec[field] = raw_rec.get(field)
+
+
 def rec_index(items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     idx: dict[str, dict[str, Any]] = {}
     for rec in items:
@@ -152,11 +163,53 @@ def rec_index(items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return idx
 
 
+def group_index(items: list[dict[str, Any]]) -> dict[str, list[str]]:
+    idx: dict[str, list[str]] = {}
+    for rec in items:
+        chart_id = normalize_chart_id(rec.get("id"))
+        group = str(rec.get("group", "")).strip()
+        if not chart_id or not group:
+            continue
+        members = idx.setdefault(group, [])
+        if chart_id not in members:
+            members.append(chart_id)
+    return idx
+
+
+def expand_group_targets(
+    target_ids: list[str],
+    raw_index: dict[str, dict[str, Any]],
+    effective_index: dict[str, dict[str, Any]],
+    raw_groups: dict[str, list[str]],
+    effective_groups: dict[str, list[str]],
+) -> list[str]:
+    expanded: list[str] = []
+    seen: set[str] = set()
+
+    def add(chart_id: str) -> None:
+        if chart_id and chart_id not in seen:
+            seen.add(chart_id)
+            expanded.append(chart_id)
+
+    for chart_id in target_ids:
+        add(chart_id)
+        for rec in (effective_index.get(chart_id), raw_index.get(chart_id)):
+            if not rec:
+                continue
+            group = str(rec.get("group", "")).strip()
+            if not group:
+                continue
+            for member_id in raw_groups.get(group, []) + effective_groups.get(group, []):
+                add(member_id)
+    return expanded
+
+
 def apply_suggestions(effective_items: list[dict[str, Any]], diagnosis: dict[str, Any]) -> list[dict[str, Any]]:
     index = rec_index(effective_items)
     touched: list[str] = []
     all_sparse = list(diagnosis.get("sparsePages", [])) + list(diagnosis.get("terminalSparsePages", []))
     for sparse in all_sparse:
+        terminal_heading = heading_anchor_text(sparse.get("first_terminal_block"))
         for suggestion in sparse.get("suggestions", []):
             action = str(suggestion.get("action", "")).strip()
             targets = normalize_targets(suggestion)
@@ -167,12 +220,109 @@ def apply_suggestions(effective_items: list[dict[str, Any]], diagnosis: dict[str
                 if action in {"compact_trailing_visual", "compact_next_visual", "compact_prev_page_visual"}:
                     apply_compact_mutation(rec)
                 elif action == "move_trailing_visual_to_section_end":
+                    if terminal_heading:
+                        continue
                     apply_section_end_mutation(rec)
                 elif action == "split_trailing_row":
                     apply_split_row_mutation(rec)
                 else:
                     continue
                 touched.append(f"{action}:{chart_id}")
+    diagnosis["appliedActions"] = touched
+    return effective_items
+
+
+def repair_terminal_sparse_pages(
+    raw_items: list[dict[str, Any]],
+    effective_items: list[dict[str, Any]],
+    diagnosis: dict[str, Any],
+) -> list[dict[str, Any]]:
+    raw_index = rec_index(raw_items)
+    effective_index = rec_index(effective_items)
+    touched: list[str] = list(diagnosis.get("appliedActions", []))
+
+    for sparse in diagnosis.get("terminalSparsePages", []):
+        page_blocks = sparse.get("pageBlocks", []) or []
+        if len(page_blocks) != 1:
+            continue
+        block = page_blocks[0]
+        chart_id = normalize_chart_id(block.get("chartId"))
+        if not chart_id:
+            continue
+        raw_rec = raw_index.get(chart_id)
+        rec = effective_index.get(chart_id)
+        if not raw_rec or not rec:
+            continue
+        if visual_type(rec) not in LOW_INFO_TYPES:
+            continue
+
+        current_position = str(rec.get("position") or "").strip()
+        raw_position = str(raw_rec.get("position") or "").strip()
+        if current_position != "section_end":
+            continue
+        if not raw_position or raw_position == current_position:
+            continue
+
+        restore_raw_fields(rec, raw_rec)
+        touched.append(f"restore_terminal_visual_to_raw_position:{chart_id}")
+
+    diagnosis["appliedActions"] = touched
+    return effective_items
+
+
+def reflow_prev_visual_into_terminal_heading(
+    raw_items: list[dict[str, Any]],
+    effective_items: list[dict[str, Any]],
+    diagnosis: dict[str, Any],
+) -> list[dict[str, Any]]:
+    raw_index = rec_index(raw_items)
+    effective_index = rec_index(effective_items)
+    raw_groups = group_index(raw_items)
+    effective_groups = group_index(effective_items)
+    touched: list[str] = list(diagnosis.get("appliedActions", []))
+
+    for sparse in diagnosis.get("terminalSparsePages", []):
+        prev_visual = sparse.get("previous_page_trailing_visual") or {}
+        anchor_text = heading_anchor_text(sparse.get("first_terminal_block"))
+        target_ids = expand_group_targets(
+            normalize_targets(prev_visual),
+            raw_index,
+            effective_index,
+            raw_groups,
+            effective_groups,
+        )
+        if not target_ids or not anchor_text:
+            continue
+        target_recs = [effective_index[chart_id] for chart_id in target_ids if chart_id in effective_index]
+        if not target_recs:
+            continue
+        if any(visual_type(rec) not in LOW_INFO_TYPES for rec in target_recs):
+            continue
+
+        for chart_id in target_ids:
+            raw_rec = raw_index.get(chart_id)
+            rec = effective_index.get(chart_id)
+            if not raw_rec or not rec:
+                continue
+
+            restore_raw_fields(rec, raw_rec)
+            rec["anchor"] = anchor_text
+            rec["anchor_occurrence"] = 1
+            group = str(rec.get("group") or raw_rec.get("group") or "").strip()
+            if group or str(rec.get("group_anchor") or raw_rec.get("group_anchor") or "").strip():
+                rec["group_anchor"] = anchor_text
+            if group or str(rec.get("row_anchor") or raw_rec.get("row_anchor") or "").strip():
+                rec["row_anchor"] = anchor_text
+            rec["position"] = "after_heading"
+            rec["keep_with_next"] = False
+            rec["can_shrink"] = True
+            try:
+                ratio = float(rec.get("max_shrink_ratio") or 0.0)
+            except (TypeError, ValueError):
+                ratio = 0.0
+            rec["max_shrink_ratio"] = max(0.30, ratio)
+            touched.append(f"reflow_prev_visual_after_terminal_heading:{chart_id}")
+
     diagnosis["appliedActions"] = touched
     return effective_items
 
@@ -235,6 +385,8 @@ def main(argv: list[str]) -> int:
     raw_items = parse_recommendations_base(str(report_dir))
     effective_items = current_effective_recommendations(report_dir, current_payload if isinstance(current_payload, dict) else {})
     effective_items = apply_suggestions(effective_items, diagnosis)
+    effective_items = reflow_prev_visual_into_terminal_heading(raw_items, effective_items, diagnosis)
+    effective_items = repair_terminal_sparse_pages(raw_items, effective_items, diagnosis)
     payload, changed = build_payload(raw_items, effective_items, diagnosis)
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 

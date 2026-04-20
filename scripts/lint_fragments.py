@@ -38,6 +38,12 @@ ECHARTS_INIT = re.compile(r"echarts\.init\s*\(", flags=re.IGNORECASE)
 SVG_RENDERER = re.compile(r"renderer\s*:\s*['\"]svg['\"]", flags=re.IGNORECASE)
 CHART_ID = re.compile(r'id=["\'](chart-C\d+)["\']', flags=re.IGNORECASE)
 STYLE_BLOCK = re.compile(r"<style\b[^>]*>.*?</style>", flags=re.IGNORECASE | re.DOTALL)
+HOST_SELECTOR = re.compile(r":host\b", flags=re.IGNORECASE)
+ROOT_SELECTOR = re.compile(r":root\s*\{", flags=re.IGNORECASE)
+FIXED_HEIGHT_GRID_INLINE = re.compile(
+    r'class=["\'][^"\']*\b(?:kpi-block|kpi-strip|insight-grid|framework-grid|scorecard-grid|swimlane-track)\b[^"\']*["\'][^>]*style=["\'][^"\']*height\s*:',
+    flags=re.IGNORECASE,
+)
 
 ALLOWED_STRUCTURAL_CLASSES = {
     "chart-container",
@@ -93,6 +99,7 @@ ALLOWED_STRUCTURAL_CLASSES = {
     "high",
     "mid",
     "low",
+    "matrix",
     "timeline",
     "timeline-item",
     "timeline-date",
@@ -156,7 +163,9 @@ def load_contracts() -> dict[str, Any]:
 
 def load_recommendation_types(report_dir: Path) -> dict[str, str]:
     mapping: dict[str, str] = {}
-    path = report_dir / "RECOMMENDATIONS.json"
+    path = report_dir / "RECOMMENDATIONS.normalized.json"
+    if not path.exists():
+        path = report_dir / "RECOMMENDATIONS.json"
     if not path.exists():
         return mapping
     try:
@@ -186,6 +195,19 @@ def classes_in(text: str) -> set[str]:
 
 def strip_style_blocks(text: str) -> str:
     return STYLE_BLOCK.sub("", text)
+
+
+def has_required_palette_vars(text: str) -> bool:
+    required = (
+        "--color-primary",
+        "--color-secondary",
+        "--color-positive",
+        "--color-negative",
+        "--color-accent",
+        "--color-border",
+        "--color-text",
+    )
+    return all(token in text for token in required)
 
 
 def count_class(text: str, class_name: str) -> int:
@@ -292,6 +314,12 @@ def lint_fragment(path: Path, visual_type: str = "", contracts_payload: dict[str
             errors.append(f"{path.name}: ECharts 片段必须显式使用 renderer: 'svg'")
         if ECHARTS_CSS_VAR_STRING.search(text):
             errors.append(f"{path.name}: ECharts option 不能直接传入 CSS 变量字符串，需用 getComputedStyle 读取实际色值")
+        if HOST_SELECTOR.search(text):
+            errors.append(f"{path.name}: ECharts 片段禁止使用 :host 定义调色变量；当前产物不是 Shadow DOM，易导致 getComputedStyle(document.documentElement) 取空值")
+        if not ROOT_SELECTOR.search(text):
+            errors.append(f"{path.name}: ECharts 片段缺少 :root 调色变量定义；片段必须自包含色板，避免变量来源不明确")
+        elif not has_required_palette_vars(text):
+            errors.append(f"{path.name}: ECharts 片段的 :root 调色变量不完整，至少需包含 primary/secondary/positive/negative/accent/border/text")
 
     non_style_text = strip_style_blocks(text)
     hardcoded_hex = sorted(set(HEX_COLOR.findall(non_style_text)))
@@ -300,6 +328,15 @@ def lint_fragment(path: Path, visual_type: str = "", contracts_payload: dict[str
 
     if re.search(r'class=["\'][^"\']*\bconsulting-figure\b[^"\']*\b(?:risk-matrix|matrix-2x2|heatmap-grid|decision-tree|driver-tree|range-band|process-chain|value-chain)\b', text, flags=re.IGNORECASE):
         errors.append(f"{path.name}: 外层 .consulting-figure 不应同时承担内部布局类")
+
+    if "consulting-figure" in present_classes and "figure-title" in present_classes and "figure-header" not in present_classes:
+        errors.append(f"{path.name}: .consulting-figure 缺少 .figure-header，易导致并排标题基线错位")
+    if "chart-container" in present_classes and "chart-title" in present_classes and "chart-header" not in present_classes:
+        errors.append(f"{path.name}: .chart-container 缺少 .chart-header，易导致并排标题基线错位")
+    if FIXED_HEIGHT_GRID_INLINE.search(text):
+        errors.append(f"{path.name}: 小组件网格存在内联 height 固定，易导致文字裁切")
+    if re.search(r"height\s*:\s*100%\s*;?", text, flags=re.IGNORECASE):
+        warnings.append(f"{path.name}: 检测到 height:100%，可能引发布局拉伸或溢出")
 
     titles = [strip_tags(item) for item in TITLE_BLOCK.findall(text) if strip_tags(item)]
     if not titles:

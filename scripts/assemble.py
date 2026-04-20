@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sys
 
-from assemble_engine import build_html
+from assembly_service import build_html
 
 
 def main(argv: list[str]) -> None:

@@ -59,33 +59,6 @@
     margin: 14pt 0 18pt;
   }
 
-  /* Export-only baseline compaction to reduce persistent page-end blanks. */
-  html.pdf-export-mode .visual-block {
-    margin-top: 10pt;
-    margin-bottom: 13pt;
-  }
-
-  html.pdf-export-mode .visual-row {
-    gap: 8pt;
-    margin-top: 10pt;
-    margin-bottom: 13pt;
-  }
-
-  html.pdf-export-mode .visual-full.visual-size-medium .chart-container,
-  html.pdf-export-mode .visual-full.visual-size-medium .consulting-figure {
-    padding: 9pt 11pt;
-  }
-
-  html.pdf-export-mode .visual-full.visual-size-medium .chart-container [id^="chart-C"] {
-    height: 188px !important;
-  }
-
-  html.pdf-export-mode .visual-full.visual-size-medium .chart-title,
-  html.pdf-export-mode .visual-full.visual-size-medium .figure-title {
-    font-size: 11.1pt;
-    line-height: 1.34;
-  }
-
   /* Step 1: allow small text/card grids to paginate between items (not through items). */
   .visual-block[data-page-role="figure_text"],
   .visual-row[data-page-role="paired_visual"],
@@ -123,106 +96,6 @@
     page-break-inside: avoid;
   }
 
-  /* Step 2: adaptive compact-print mode (applied by pdf-export.js before print). */
-  .compact-print.visual-block {
-    margin-top: 10pt !important;
-    margin-bottom: 12pt !important;
-  }
-
-  .compact-print .chart-container,
-  .compact-print .consulting-figure {
-    padding: 10pt 12pt !important;
-  }
-
-  .compact-print .chart-title,
-  .compact-print .figure-title {
-    font-size: 11.2pt !important;
-    line-height: 1.36 !important;
-  }
-
-  .compact-print .chart-annotation,
-  .compact-print .figure-note {
-    font-size: 9.4pt !important;
-    margin-bottom: 5pt !important;
-  }
-
-  .compact-print .chart-src,
-  .compact-print .figure-src,
-  .compact-print .component-src {
-    margin-top: 6pt !important;
-    font-size: 8.8pt !important;
-  }
-
-  .compact-print .kpi-block,
-  .compact-print .kpi-strip {
-    gap: 6pt !important;
-  }
-
-  .compact-print .kpi-card {
-    padding: 6pt 8pt !important;
-  }
-
-  .compact-print .kpi-val {
-    font-size: 18pt !important;
-    line-height: 1.12 !important;
-  }
-
-  /* Page-fit planner: stronger compaction for blocks that can be pulled upward. */
-  .page-fit-compact.visual-block,
-  .page-fit-compact.visual-row {
-    margin-top: 8pt !important;
-    margin-bottom: 10pt !important;
-  }
-
-  .page-fit-compact .chart-container,
-  .page-fit-compact .consulting-figure {
-    padding: 8pt 10pt !important;
-  }
-
-  .page-fit-compact .chart-title,
-  .page-fit-compact .figure-title {
-    font-size: 10.6pt !important;
-    line-height: 1.3 !important;
-  }
-
-  .page-fit-compact .chart-annotation,
-  .page-fit-compact .figure-note {
-    font-size: 8.9pt !important;
-    margin-bottom: 4pt !important;
-  }
-
-  .page-fit-compact .chart-src,
-  .page-fit-compact .figure-src,
-  .page-fit-compact .component-src {
-    margin-top: 4pt !important;
-    font-size: 8.2pt !important;
-  }
-
-  .visual-block[data-visual-type="decision_tree"][data-layout="compact"] .decision-tree,
-  .page-fit-compact .decision-tree {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 6pt !important;
-  }
-
-  .visual-block[data-visual-type="decision_tree"][data-layout="compact"] .decision-node,
-  .page-fit-compact .decision-node {
-    padding: 6pt 7pt !important;
-    border-radius: 5px !important;
-  }
-
-  .visual-block[data-visual-type="decision_tree"][data-layout="compact"] .decision-title,
-  .page-fit-compact .decision-title {
-    font-size: 9.4pt !important;
-    line-height: 1.15 !important;
-    margin-bottom: 2pt !important;
-  }
-
-  .visual-block[data-visual-type="decision_tree"][data-layout="compact"] .decision-body,
-  .page-fit-compact .decision-body {
-    font-size: 8.2pt !important;
-    line-height: 1.18 !important;
-  }
-
   main > hr:last-of-type {
     margin: 4pt 0 3pt !important;
   }
@@ -246,6 +119,19 @@
 
   table {
     font-size: 9.5pt;
+    table-layout: auto;
+  }
+
+  th,
+  td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .consulting-figure table,
+  .chart-container table {
+    table-layout: fixed;
   }
 }
 

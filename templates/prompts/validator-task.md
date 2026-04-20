@@ -36,8 +36,10 @@
 - `anchor` 是纯标题文本，不带 `#`
 - `anchor_occurrence` 缺省时按 1 处理
 - `position` 属于 `after_cover`、`after_heading`、`after_first_paragraph`、`before_heading`、`section_end`
+- `after_first_paragraph` 必须落在 anchor 所在节的顶层正文段落后，不能把组件插进 `blockquote`、列表、表格或提示框容器
 - `layout` 属于 `full`、`half`、`third`、`compact`
 - `layout` 为 `half`、`third` 或 `compact` 时，推荐设置 `group`
+- 同一个 `group` 若包含 2 个及以上 recommendation，则它们必须共享同一个 `anchor` 或 `group_anchor`、同一个 `position`、同一个 `anchor_occurrence`
 - `equal_height` 缺省按 `false` 处理；需要左右外框齐平时可设为 `true`，但应配合 `size: small`
 - `data.source`、`source` 或 `notes` 至少有一个能说明依据
 
@@ -94,7 +96,8 @@ table -> benchmark_table
 
 对非精确数据图解：
 
-- `insight_cards`、`matrix_2x2`、`risk_matrix`、`timeline`、`value_chain`、`heatmap`、`roadmap`、`scorecard`、`decision_tree` 可以从正文提炼，但必须能在原文找到支撑段落
+- `insight_cards`、`matrix_2x2`、`risk_matrix`、`timeline`、`value_chain`、`heatmap`、`roadmap`、`decision_tree` 可以从正文提炼，但必须能在原文找到支撑段落
+- `scorecard` 只有在正文明确给出评分框架或可逐项回指的评价依据时才能使用；否则必须改用 `insight_cards`、`risk_matrix` 或结论摘要卡
 
 ### 4. 密度、类型和布局
 
@@ -111,11 +114,17 @@ table -> benchmark_table
 - 超过 60% 都是柱状图：WARNING
 - 只有数据图、没有结构图/观点卡：WARNING
 - 信息量小的连续图表未使用并排布局：WARNING
+- `layout: half` 的柱图仍使用长标签、宽边距、自动省略标签，导致图形明显偏在卡片一侧：WARNING
 - 并排组内组件超过 3 个：WARNING
 - `equal_height: true` 但组内组件不是 `size: small`：WARNING
 - 并排行外框齐平但内部内容未压缩、产生大块底部留白：WARNING
 - 同高行内的 `.kpi-block`、`.insight-grid`、`.scorecard-grid` 被固定高度或拉伸到 `height: 100%`，导致内容裁切或比例失衡：WARNING
 - 来源文案是“报告正文整理”“报告执行摘要整理”等无信息量描述：WARNING
+- 若设置 `group`，但组内 recommendation 的 `anchor/group_anchor + position + anchor_occurrence` 不一致：ERROR
+- 4 项卡片网格出现 3+1（非 2x2）：ERROR
+- 任意网格出现“尾行仅 1 项”的重度不均衡（如 7 项配 3 列）：ERROR
+- 并排同高行标题和正文起始线错位（>6px）：ERROR
+- 组件内容区发生真实文本溢出（scrollHeight/clientHeight）：ERROR
 
 ### 5. 片段检查
 
@@ -126,7 +135,7 @@ table -> benchmark_table
 - ECharts 必须使用 `renderer: 'svg'`
 - 不得包含 `renderer: 'canvas'`
 - 不得包含 `html2canvas`、`jspdf`、`downloadChart`
-- 柱状图应使用圆角 `borderRadius`
+- 柱状图应使用圆角 `barBorderRadius`
 - 图表容器高度应在 220-360px；大型结构图不超过 560px
 - 片段标题、注释、来源应使用统一类名：`.chart-title`、`.chart-annotation`、`.chart-src` 或 `.figure-title`、`.figure-src`
 - 来源文案应可追溯；若无法提供有效来源，允许不渲染来源行，但禁止泛化来源占位

@@ -75,7 +75,7 @@ chart-fragments/C{id}.html
 --echarts-palette: #1e3a5f, #2563eb, #166534, #d97706, #991b1b;
 ```
 
-**必须从 `DESIGN_BRIEF.json` 读取 `color_scheme`**，对照 `references/color-palettes.md` 加载对应色板。所有图表中的色值必须使用 CSS 变量 `var(--color-*)`，不要硬编码任何 hex 值（tooltip 等需要直接字符串的地方除外，但仍需遵循语义语义）。
+**必须从 `DESIGN_BRIEF.json` 读取 `color_scheme`**，对照 `references/color-palettes.md` 加载对应色板。片段内允许在 `<style>` 中声明 CSS 变量，但 ECharts `option` 里不得直接写 `var(--color-*)`，也不得在脚本中写任何 hex fallback。正确做法是先在片段自己的 `<style>` 里用 `:root` 声明完整调色变量，再用 `getComputedStyle(document.documentElement)` 读取变量实际值传入 `option`。禁止使用 `:host`，因为当前产物不是 Shadow DOM，变量来源会变得不确定。
 
 ## 图表与图解类型
 
@@ -129,11 +129,23 @@ chart-fragments/C{id}.html
 并排规则：
 
 - 两个或多个 recommendation 只有在 `group` 相同、锚点和插入位置相同、且 `layout` 为 `half`/`third`/`compact` 时才会并排
+- 一旦设置了同一个 `group`，组内所有 recommendation 必须共享同一个 `anchor` 或 `group_anchor`、同一个 `position`、同一个 `anchor_occurrence`；否则 Phase gate 会直接失败，不再只是组装告警
 - `row_title` 可作为并排行标题
 - 默认不要把普通组件硬拉高；如果需要左右外框齐平，设置 `equal_height: true`，并保持 `size: small`
 - `equal_height: true` 会启用并排小组件压缩样式，缩小 KPI 卡片 padding/字号和小图表高度；只能拉齐 `.chart-container` / `.consulting-figure` 外层，不要给 `.kpi-block`、`.insight-grid` 等内部网格写固定高度或 `height: 100%`
 - 并排图不要使用复杂坐标轴，也不要超过 260px 高
 - 单张信息量大的图必须使用 `layout: full`
+- `layout: half` 的 ECharts 柱图必须使用半栏 preset：短标签/必要换行、`axisLabel.interval = 0`、更小左右边距、较窄 `barWidth`，避免图只挤在卡片左半边
+- `kpi_strip` 优先使用 `.kpi-block`；如果片段确实使用 `.kpi-strip`，4 项必须是 2x2，3 项必须是 2+1，而不是一行硬挤
+
+结构硬约束（新增）：
+
+- 只要使用 `.chart-title`，必须包在 `.chart-header` 中
+- 只要使用 `.figure-title`，必须包在 `.figure-header` 中
+- 卡片类组件出现 4 项时，必须按 2x2 组织，不允许 3+1
+- `roadmap` 单泳道若有 4 个 milestone，必须按 2x2 呈现，不允许 3+1
+- 所有网格型组件禁止“尾行只有 1 项”的重度不均衡（例如 7 项配 3 列）
+- `scorecard` 只有在原文已经提供可追溯的评分依据时才能使用；每个评分项都必须能回指到正文证据，不能凭模型主观打分
 
 ## 插入位置
 
@@ -147,6 +159,8 @@ chart-fragments/C{id}.html
 
 不要把任何视觉组件插入报告封面内部。若 anchor 是一级标题，默认使用 `after_cover` 或锚定到第一个正文小节。
 
+`after_first_paragraph` 指 anchor 所在节内的**顶层正文段落**，不能落到 `blockquote`、表格说明、列表或其他容器内部。
+
 ## ECharts 强制规范
 
 为了导出清晰 PDF，ECharts 必须使用 SVG renderer：
@@ -157,32 +171,44 @@ var chart = echarts.init(dom, null, { renderer: 'svg' });
 
 不要使用 `renderer: 'canvas'`。不要使用 html2canvas、jsPDF、PNG 下载按钮或 `downloadChart`。
 
-通用配置（颜色必须来自 CSS 变量，不要硬编码）：
+通用配置（脚本中的颜色必须来自 `getComputedStyle` 读取结果，不要硬编码）：
 
 ```javascript
+var style = getComputedStyle(document.documentElement);
+var c = {
+  primary: style.getPropertyValue('--color-primary').trim(),
+  secondary: style.getPropertyValue('--color-secondary').trim(),
+  positive: style.getPropertyValue('--color-positive').trim(),
+  accent: style.getPropertyValue('--color-accent').trim(),
+  negative: style.getPropertyValue('--color-negative').trim(),
+  border: style.getPropertyValue('--color-border').trim(),
+  text: style.getPropertyValue('--color-text').trim(),
+  inverseText: style.getPropertyValue('--color-inverse-text').trim()
+};
+
 var option = {
   animation: false,
-  color: ['var(--color-primary)', 'var(--color-secondary)', 'var(--color-positive)', 'var(--color-accent)', 'var(--color-negative)'],
+  color: [c.primary, c.secondary, c.positive, c.accent, c.negative],
   tooltip: {
     trigger: 'axis',
-    backgroundColor: 'var(--color-text)',
+    backgroundColor: c.text,
     borderWidth: 0,
     padding: [8, 12],
-    textStyle: { color: '#fff', fontSize: 12 }
+    textStyle: { color: c.inverseText, fontSize: 12 }
   },
   grid: { left: '3%', right: '4%', bottom: '4%', top: 18, containLabel: true },
   xAxis: {
     type: 'category',
-    axisLine: { lineStyle: { color: 'var(--color-border)', width: 1 } },
+    axisLine: { lineStyle: { color: c.border, width: 1 } },
     axisTick: { show: false },
-    axisLabel: { color: 'var(--color-secondary)', fontSize: 11 }
+    axisLabel: { color: c.secondary, fontSize: 11 }
   },
   yAxis: {
     type: 'value',
     axisLine: { show: false },
     axisTick: { show: false },
     splitLine: { show: false },
-    axisLabel: { color: 'var(--color-secondary)', fontSize: 11 }
+    axisLabel: { color: c.secondary, fontSize: 11 }
   }
 };
 ```
@@ -193,22 +219,23 @@ var option = {
 var style = getComputedStyle(document.documentElement);
 var primary = style.getPropertyValue('--color-primary').trim();
 var option = {
-  color: [primary, '#64748b', '#166534', '#d97706', '#991b1b'],
+  color: [primary],
   // ...
 };
 ```
 
-**推荐做法**：在 HTML 片段的 `<style>` 块中定义 CSS 变量，同时在 JS 中通过 `getComputedStyle` 读取实际色值传入 ECharts。
+**推荐做法**：在 HTML 片段的 `<style>` 块中用 `:root` 定义 CSS 变量，同时在 JS 中通过 `getComputedStyle(document.documentElement)` 读取实际色值传入 ECharts。不要写 `|| '#888'` 之类的 fallback，也不要用 `:host`，lint 会直接判错。
 
 柱状图必须使用圆角并直接标数值：
 
 ```javascript
-itemStyle: { color: '#0f766e', borderRadius: [6, 6, 0, 0] },
+barBorderRadius: [6, 6, 0, 0],
+itemStyle: { color: c.primary },
 label: {
   show: true,
   position: 'top',
   formatter: '{c}',
-  color: '#111827',
+  color: c.text,
   fontSize: 11,
   fontWeight: 700
 }
@@ -229,6 +256,7 @@ label: {
     --color-secondary: #64748b;
     --color-border: #d1d5db;
     --color-text: #111827;
+    --color-inverse-text: #ffffff;
   }
 </style>
 <div class="chart-container" id="chart-C1-container">
@@ -250,18 +278,26 @@ label: {
 
   var style = getComputedStyle(document.documentElement);
   var c = {
-    primary: style.getPropertyValue('--color-primary').trim() || '#1e3a5f',
-    positive: style.getPropertyValue('--color-positive').trim() || '#166534',
-    negative: style.getPropertyValue('--color-negative').trim() || '#991b1b',
-    accent: style.getPropertyValue('--color-accent').trim() || '#d97706',
-    secondary: style.getPropertyValue('--color-secondary').trim() || '#64748b',
-    border: style.getPropertyValue('--color-border').trim() || '#d1d5db',
-    text: style.getPropertyValue('--color-text').trim() || '#111827'
+    primary: style.getPropertyValue('--color-primary').trim(),
+    positive: style.getPropertyValue('--color-positive').trim(),
+    negative: style.getPropertyValue('--color-negative').trim(),
+    accent: style.getPropertyValue('--color-accent').trim(),
+    secondary: style.getPropertyValue('--color-secondary').trim(),
+    border: style.getPropertyValue('--color-border').trim(),
+    text: style.getPropertyValue('--color-text').trim(),
+    inverseText: style.getPropertyValue('--color-inverse-text').trim()
   };
 
   chart.setOption({
     animation: false,
     color: [c.primary, c.secondary, c.positive, c.accent, c.negative],
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: c.text,
+      borderWidth: 0,
+      padding: [8, 12],
+      textStyle: { color: c.inverseText, fontSize: 12 }
+    },
     grid: { left: '3%', right: '4%', bottom: '4%', top: 18, containLabel: true },
     xAxis: {
       type: 'category',
@@ -281,7 +317,8 @@ label: {
       type: 'bar',
       name: '2025 交付量',
       data: [28.5, 50.1, 72.0, 68.4],
-      itemStyle: { color: c.primary, borderRadius: [6, 6, 0, 0] },
+      barBorderRadius: [6, 6, 0, 0],
+      itemStyle: { color: c.primary },
       barWidth: '42%',
       label: { show: true, position: 'top', formatter: '{c}', color: c.text, fontSize: 11, fontWeight: 700 }
     }]
@@ -296,7 +333,9 @@ label: {
 
 ```html
 <div class="consulting-figure">
-  <div class="figure-title">盈利修复不是单一销量问题，而是规模、毛利、费用三条线同时收敛</div>
+  <div class="figure-header">
+    <div class="figure-title">盈利修复不是单一销量问题，而是规模、毛利、费用三条线同时收敛</div>
+  </div>
   <div class="driver-tree">
     <div class="driver-root">盈利拐点</div>
     <div class="driver-branches">
@@ -318,7 +357,9 @@ label: {
 
 ```html
 <div class="consulting-figure">
-  <div class="figure-title">估值判断更适合用区间表达，而不是单点价格</div>
+  <div class="figure-header">
+    <div class="figure-title">估值判断更适合用区间表达，而不是单点价格</div>
+  </div>
   <div class="range-band">
     <div class="range-row">
       <div class="range-label">保守情景</div>
@@ -332,12 +373,13 @@ label: {
 
 ### 并排小组件
 
-如果 recommendation 使用同一个 `group` 和 `layout: half`，组装器会自动包一层 `.visual-row`。片段内部只写普通 `.chart-container` 或 `.consulting-figure`，不要自己写 `.visual-row`。
+如果 recommendation 使用同一个 `group` 和 `layout: half`，组装器会自动包一层 `.visual-row`。片段内部只写普通 `.chart-container` 或 `.consulting-figure`，不要自己写 `.visual-row`。注意：只有当组内 recommendation 共享同一个 `anchor/group_anchor + position + anchor_occurrence` 时，并排才会真正成立。
 
 ## 数据与安全规则
 
 - 不得编造正文没有支撑的数据
-- 数据不足时生成 `insight_cards`、`matrix_2x2`、`risk_matrix`、`driver_tree`、`scorecard` 或 `benchmark_table`
+- 数据不足时生成 `insight_cards`、`matrix_2x2`、`risk_matrix`、`driver_tree` 或 `benchmark_table`
+- 只有在正文已经给出明确评分框架和逐项依据时，才允许生成 `scorecard`
 - 不要输出占位符，例如 `TODO`、`待补充`、`--`
 - `chart-src` / `figure-src` 必须有信息量。禁止使用“报告正文整理”“报告执行摘要整理”这类泛化来源；如果没有可靠外部来源，只保留单位等有效信息，不写无意义来源标签
 - 不要用 CDN

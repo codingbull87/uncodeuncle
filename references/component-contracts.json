@@ -23,13 +23,13 @@
     },
     "bar_compare": {
       "required_any": ["chart-container"],
-      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'bar'", "borderRadius"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'bar'", "barBorderRadius"],
       "chart_height_min": 180,
       "chart_height_max": 360
     },
     "bar_trend": {
       "required_any": ["chart-container"],
-      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'bar'", "borderRadius"],
+      "required_patterns": ["echarts.init", "renderer: 'svg'", "type: 'bar'", "barBorderRadius"],
       "chart_height_min": 180,
       "chart_height_max": 360
     },

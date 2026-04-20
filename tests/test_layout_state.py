@@ -7,7 +7,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from assemble_engine import parse_recommendations, parse_recommendations_base
+from recommendation_loader import parse_recommendations_base
+from recommendation_state import parse_recommendations
 from repair_layout import apply_suggestions, build_payload
 
 
@@ -37,7 +38,11 @@ class LayoutStateTests(unittest.TestCase):
     def test_raw_recommendations_ignore_generated_overrides(self) -> None:
         report_dir = self.make_report_dir()
         raw = parse_recommendations_base(str(report_dir))
-        effective = parse_recommendations(str(report_dir))
+        effective = parse_recommendations(
+            str(report_dir),
+            normalize_chart_id=lambda raw: f"C{raw}" if str(raw).isdigit() else str(raw),
+            read_file=lambda path: Path(path).read_text(encoding="utf-8", errors="ignore"),
+        )
         self.assertEqual(raw[0]['size'], 'medium')
         self.assertEqual(effective[0]['size'], 'small')
         self.assertTrue(effective[0]['print_compact'])

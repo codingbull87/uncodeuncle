@@ -2,6 +2,8 @@
   var chartHeightCache = new Map();
   var blockShrinkCache = new Map();
   var isPdfExportMode = false;
+  var chartResizeObserver = null;
+  var pendingResizeTimer = 0;
 
   try {
     isPdfExportMode = new URLSearchParams(window.location.search).get('pdf') === '1';
@@ -17,6 +19,32 @@
     document.querySelectorAll('[id^="chart-C"]').forEach(function (dom) {
       var instance = echarts.getInstanceByDom(dom);
       if (instance) instance.resize();
+    });
+  }
+
+  function scheduleChartResize(delay) {
+    if (pendingResizeTimer) {
+      window.clearTimeout(pendingResizeTimer);
+    }
+    pendingResizeTimer = window.setTimeout(function () {
+      pendingResizeTimer = 0;
+      resizeCharts();
+    }, delay || 0);
+  }
+
+  function bindChartObservers() {
+    if (!window.ResizeObserver || chartResizeObserver) return;
+    chartResizeObserver = new ResizeObserver(function () {
+      scheduleChartResize(36);
+    });
+    document.querySelectorAll('[id^="chart-C"]').forEach(function (dom) {
+      if (dom.parentElement) chartResizeObserver.observe(dom.parentElement);
+      if (dom.parentElement && dom.parentElement.parentElement) {
+        chartResizeObserver.observe(dom.parentElement.parentElement);
+      }
+    });
+    document.querySelectorAll('.visual-row, .visual-block:not(.visual-block-nested)').forEach(function (node) {
+      chartResizeObserver.observe(node);
     });
   }
 
@@ -85,7 +113,9 @@
       var used = elementTopWithinPage(heading, page) % pageHeight;
       var remain = pageHeight - used;
       var need = bundleNeedPx(heading);
-      if (used > pageHeight * 0.70 && remain < need) {
+      // Be conservative: only force chapter break when heading is very close
+      // to page bottom and remaining space is clearly insufficient.
+      if (used > pageHeight * 0.82 && remain < Math.min(need, Math.round(pageHeight * 0.20))) {
         heading.classList.add('chapter-page-break');
       }
     });
@@ -93,112 +123,6 @@
 
   function applyAdaptivePrintCompaction() {
     resetCompactPrint();
-    var page = document.querySelector('.page');
-    if (!page) return;
-
-    var pageHeight = getPrintablePageHeightPx();
-    applyChapterBreaks(pageHeight);
-
-    function canShrinkBlock(block) {
-      return block.dataset.canShrink !== 'false';
-    }
-
-    function getMaxShrinkRatio(block) {
-      var parsed = parseFloat(block.dataset.maxShrinkRatio || '');
-      if (isNaN(parsed)) return 0.25;
-      return Math.max(0, Math.min(parsed, 0.35));
-    }
-
-    function getChartOriginHeight(chartDom) {
-      if (!chartHeightCache.has(chartDom)) {
-        var inlineHeight = chartDom.style.height || '';
-        var computedHeight = window.getComputedStyle(chartDom).height || '';
-        chartHeightCache.set(chartDom, inlineHeight || computedHeight);
-      }
-      return parseInt(chartHeightCache.get(chartDom) || '', 10);
-    }
-
-    function getBlockShrinkPotential(block) {
-      if (!canShrinkBlock(block)) return 0;
-      var ratio = getMaxShrinkRatio(block);
-      var potential = 0;
-      block.querySelectorAll('[id^="chart-C"]').forEach(function (chartDom) {
-        var parsed = getChartOriginHeight(chartDom);
-        if (!isNaN(parsed) && parsed > 120) {
-          potential += Math.max(0, Math.min(parsed * ratio, parsed - 120));
-        }
-      });
-      return Math.floor(potential);
-    }
-
-    function compactBlock(block, chartShrinkPx, aggressive) {
-      if (!canShrinkBlock(block)) return false;
-      var currentShrink = blockShrinkCache.get(block) || 0;
-      if (chartShrinkPx <= currentShrink) return false;
-      blockShrinkCache.set(block, chartShrinkPx);
-      block.classList.add('compact-print');
-      if (aggressive || chartShrinkPx >= 56) {
-        block.classList.add('page-fit-compact');
-      }
-      var shrinkRatio = getMaxShrinkRatio(block);
-      block.querySelectorAll('[id^="chart-C"]').forEach(function (chartDom) {
-        var parsed = getChartOriginHeight(chartDom);
-        if (!isNaN(parsed) && parsed > 120) {
-          var cap = Math.floor(parsed * shrinkRatio);
-          var effectiveShrink = Math.min(chartShrinkPx, cap);
-          chartDom.style.height = Math.max(parsed - effectiveShrink, 120) + 'px';
-        }
-      });
-      return true;
-    }
-
-    function runPass() {
-      var changed = false;
-      var targets = Array.prototype.slice.call(document.querySelectorAll('.visual-row, .visual-block:not(.visual-block-nested)'));
-      var geometry = targets.map(function (block) {
-        return {
-          block: block,
-          top: elementTopWithinPage(block, page),
-          height: Math.ceil(block.getBoundingClientRect().height),
-          hasChart: !!block.querySelector('[id^="chart-C"]'),
-        };
-      });
-
-      geometry.forEach(function (item, index) {
-        if (!item.height || !item.hasChart) return;
-        var used = item.top % pageHeight;
-        var remain = pageHeight - used;
-        var overflow = item.height - remain;
-        var shrinkPotential = getBlockShrinkPotential(item.block);
-        if (shrinkPotential <= 0) return;
-
-        // Case A: block almost fits current page, pull it upward by targeted shrink.
-        if (overflow > 0 && remain > 140 && overflow <= 300 && shrinkPotential >= overflow) {
-          var need = Math.min(150, Math.max(24, overflow + 12));
-          if (compactBlock(item.block, need, need >= 56)) changed = true;
-        }
-
-        // Case B: block starts near next page top, previous page has excessive blank.
-        var startsNearTop = used <= 145;
-        if (!startsNearTop) return;
-        var prevBlank = pageHeight - used;
-        if (prevBlank < Math.round(pageHeight * 0.3)) return;
-        if (item.height < 200) return;
-        var desiredBlank = Math.round(pageHeight * 0.18);
-        var fitNeed = item.height - (prevBlank - 16);
-        if (fitNeed > shrinkPotential) return;
-        var needBackfill = Math.min(150, Math.max(28, Math.round((prevBlank - desiredBlank) * 0.75)));
-        if (fitNeed > 0) needBackfill = Math.min(150, Math.max(needBackfill, fitNeed + 12));
-        if (compactBlock(item.block, needBackfill, true)) changed = true;
-      });
-      return changed;
-    }
-
-    for (var pass = 0; pass < 4; pass += 1) {
-      var changed = runPass();
-      resizeCharts();
-      if (!changed) break;
-    }
   }
 
   function markChartsReady() {
@@ -206,34 +130,36 @@
   }
 
   window.addEventListener('load', function () {
+    bindChartObservers();
     resizeCharts();
+    window.requestAnimationFrame(resizeCharts);
     window.setTimeout(function () {
       resizeCharts();
+      window.requestAnimationFrame(resizeCharts);
       if (isPdfExportMode) {
-        applyAdaptivePrintCompaction();
-        resizeCharts();
-        window.setTimeout(function () {
-          applyAdaptivePrintCompaction();
-          resizeCharts();
-        }, 220);
+        applyChapterBreaks(getPrintablePageHeightPx());
       }
       markChartsReady();
     }, 300);
+    window.setTimeout(resizeCharts, 900);
+    window.setTimeout(resizeCharts, 1600);
   });
 
   window.addEventListener('beforeprint', function () {
-    applyAdaptivePrintCompaction();
+    applyChapterBreaks(getPrintablePageHeightPx());
     resizeCharts();
     window.setTimeout(resizeCharts, 0);
   });
   window.addEventListener('afterprint', resetCompactPrint);
-  window.addEventListener('resize', resizeCharts);
+  window.addEventListener('resize', function () {
+    scheduleChartResize(24);
+  });
 
   var btn = document.getElementById('pdf-export-btn');
   if (!btn) return;
 
   btn.addEventListener('click', function () {
-    applyAdaptivePrintCompaction();
+    applyChapterBreaks(getPrintablePageHeightPx());
     resizeCharts();
     window.setTimeout(function () {
       window.print();

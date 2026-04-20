@@ -5,10 +5,15 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from layout_probe import merge_registry_with_markers
+from layout_probe import BLOCK_SELECTOR, merge_registry_with_markers
 
 
 class LayoutProbeTests(unittest.TestCase):
+    def test_probe_tracks_h4_to_h6_headings(self) -> None:
+        self.assertIn('h4', BLOCK_SELECTOR)
+        self.assertIn('h5', BLOCK_SELECTOR)
+        self.assertIn('h6', BLOCK_SELECTOR)
+
     def test_merge_registry_tracks_cross_page_usage(self) -> None:
         registry = {
             'pageHeightPx': 100,

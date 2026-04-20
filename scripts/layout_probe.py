@@ -12,12 +12,14 @@ from typing import Any
 from export_pdf import candidate_browsers, export_pdf
 
 
-BLOCK_SELECTOR = "h1,h2,h3,.visual-row,.visual-block:not(.visual-block-nested),table,blockquote,p,ul,ol"
+BLOCK_SELECTOR = "h1,h2,h3,h4,h5,h6,.visual-row,.visual-block:not(.visual-block-nested),table,blockquote,p,ul,ol"
 PAGE_HEIGHT_PX = round((297 - 16 - 18) * (96 / 25.4))
 MARKER_REGEX = re.compile(r"R([SE])B(\d+)Z")
 MARKER_TOKEN_REGEX = re.compile(r"[A-Z0-9]+")
 MARKER_TEXT_REGEX = re.compile(r"R[SE]B\d+Z")
 DUMP_SCHEMA = "report-illustrator-layout-probe:v3"
+SCRIPT_TAG_REGEX = re.compile(r"<script\b[^>]*>.*?</script>", flags=re.IGNORECASE | re.DOTALL)
+EXPORT_BUTTON_REGEX = re.compile(r'<button\b[^>]*id=["\']pdf-export-btn["\'][^>]*>.*?</button>', flags=re.IGNORECASE | re.DOTALL)
 
 
 PROBE_STYLE = """
@@ -161,6 +163,12 @@ def inject_probe_assets(source_html: str) -> str:
     return html
 
 
+def strip_runtime_tags(html: str) -> str:
+    html = SCRIPT_TAG_REGEX.sub("", html)
+    html = EXPORT_BUTTON_REGEX.sub("", html)
+    return html
+
+
 def run_dump_dom(path: Path, query: str = "layout_dump=1") -> str:
     browsers = candidate_browsers()
     if not browsers:
@@ -192,11 +200,26 @@ def run_dump_dom(path: Path, query: str = "layout_dump=1") -> str:
     return proc.stdout
 
 
+def build_static_snapshot(path: Path) -> str:
+    dumped = run_dump_dom(path, query="pdf=1")
+    return strip_runtime_tags(dumped)
+
+
 def parse_dumped_registry(dom_text: str) -> dict[str, Any]:
-    match = re.search(r'<pre id="layout-json">(.*?)</pre>', dom_text, flags=re.DOTALL)
-    if not match:
+    matches = re.findall(r'<pre id="layout-json">(.*?)</pre>', dom_text, flags=re.DOTALL)
+    if not matches:
         raise SystemExit("[ERROR] dump-dom 结果缺少 layout-json")
-    raw = html_lib.unescape(match.group(1).strip())
+    # The probe script source itself contains the literal string
+    # '<pre id="layout-json"></pre>'; pick the last non-empty payload
+    # from the rendered DOM to avoid parsing that placeholder.
+    raw = ""
+    for candidate in reversed(matches):
+        text = html_lib.unescape(candidate.strip())
+        if text:
+            raw = text
+            break
+    if not raw:
+        raise SystemExit("[ERROR] layout-json 为空：探针脚本未产出有效注册表")
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError as exc:
@@ -384,9 +407,9 @@ def merge_registry_with_markers(registry: dict[str, Any], marker_events: list[di
 
 
 def build_probe_payload(html_path: Path) -> dict[str, Any]:
-    source_html = html_path.read_text(encoding="utf-8", errors="ignore")
-    probe_html = inject_probe_assets(source_html)
     with tempfile.TemporaryDirectory(prefix="report-illustrator-probe-") as tmpdir:
+        static_html = build_static_snapshot(html_path)
+        probe_html = inject_probe_assets(static_html)
         temp_html = Path(tmpdir) / "probe.html"
         temp_html.write_text(probe_html, encoding="utf-8")
         dumped = run_dump_dom(temp_html, query="layout_dump=1")
@@ -396,6 +419,7 @@ def build_probe_payload(html_path: Path) -> dict[str, Any]:
         events, page_texts, total_pages = extract_pdf_markers(pdf_path, int(registry.get("pageHeightPx", PAGE_HEIGHT_PX)))
 
     payload = merge_registry_with_markers(registry, events, total_pages)
+    payload["pageCount"] = total_pages
     page_text_index = {int(item["page"]): item for item in page_texts}
     for page in payload.get("pages", []):
         info = page_text_index.get(int(page.get("page", 0)), {})
